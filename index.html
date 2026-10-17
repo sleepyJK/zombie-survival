@@ -161,6 +161,15 @@
     overflow-y: auto;
     background: radial-gradient(ellipse at center, rgba(24,10,10,0.6) 0%, rgba(0,0,0,0.84) 74%);
   }
+  #playerSettings { width: min(480px, 100%); flex-shrink: 0; box-sizing: border-box; padding: 12px 16px; border: 1px solid #555; border-radius: 12px; background: #17181ce8; font-size: 14px; }
+  #playerSettings label { display: block; margin-bottom: 6px; }
+  #playerSettings input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #777; border-radius: 6px; background: #090b10; color: #fff; font: inherit; user-select: text; }
+  #playerSettings details { margin-top: 10px; }
+  #playerSettings summary { cursor: pointer; }
+  #playerSettings p { font-size: 12px; line-height: 1.5; color: #bbb; margin: 8px 0; }
+  #webhookSave { margin-top: 8px; padding: 8px 14px; cursor: pointer; }
+  #discordStatus { font-size: 14px; color: #b9d7ff; overflow-wrap: anywhere; }
+  #startScreen > * { flex-shrink: 0; }
   #startScreen .titleWrap { text-align: center; line-height: 1; }
   #startTitle {
     margin: 0;
@@ -625,6 +634,19 @@
 <!-- ───────── 로비(처음 화면) ───────── -->
 <div id="hubScreen">
   <h1 id="hubTitle">좀비 서바이벌</h1>
+  <section id="playerSettings" aria-label="플레이어와 디스코드 설정">
+    <label for="playerName">플레이어 이름</label>
+    <input id="playerName" maxlength="40" autocomplete="nickname" aria-describedby="playerNameHint">
+    <p id="playerNameHint">자동으로 만든 이름을 자유롭게 수정하세요.</p>
+    <details>
+      <summary>디스코드 결과 전송 설정</summary>
+      <p>웹훅 URL을 저장하면 게임 종료 시 결과를 자동 전송합니다. 이 브라우저에만 저장됩니다.</p>
+      <label for="discordWebhook">디스코드 웹훅 URL</label>
+      <input id="discordWebhook" type="password" autocomplete="off" placeholder="https://discord.com/api/webhooks/…">
+      <button id="webhookSave" type="button">설정 저장</button>
+      <p id="webhookSettingsStatus" role="status" aria-live="polite"></p>
+    </details>
+  </section>
   <div id="hubCoin">보유 포인트: 0</div>
   <div id="worldGrid">
     <button class="worldCard w1" data-world="1"><canvas width="320" height="200"></canvas><div class="wLabel" style="color:#5fe07a">1세계 · 좀비 도시</div></button>
@@ -749,6 +771,7 @@
   <h1 id="msgTitle">게임 오버</h1>
   <p id="msgScore">최종 점수: 0</p>
   <p style="font-size:14px;color:#aaa;">WASD 이동 · 마우스 조준/클릭 발사 · R 재장전</p>
+  <p id="discordStatus" role="status" aria-live="polite"></p>
   <button id="restartBtn">다시 시작</button>
   <button id="menuBtn" class="secondary">로비</button>
 </div>
@@ -771,6 +794,7 @@ var wifi = { role:null, pc:null, dc:null, open:false, kind:null, playing:false, 
 
 const keys = {};
 window.addEventListener('keydown', e => {
+  if (e.target.closest('input, textarea, select, [contenteditable]')) return;
   const k = (e.key || '').toLowerCase();
   keys[k] = true;
   const isEnter = k === 'enter' || e.code === 'Enter' || e.code === 'NumpadEnter';
@@ -815,6 +839,103 @@ let pendingUpgrades = [];
 let lastScore = null, bestScore = 0;   // 시작 화면에 표시할 최근/최고 점수
 
 const rnd = (a, b) => a + Math.random()*(b-a);
+
+// 서버 없이 브라우저에서 직접 전송한다. URL은 이 브라우저에만 저장한다.
+const PLAYER_NAME_PREFIXES = ['성실한 다람쥐', '부지런한 두더지', '게으른 나무늘보', '귀여운 고양이'];
+const nameInput = document.getElementById('playerName');
+const webhookInput = document.getElementById('discordWebhook');
+let discordWebhookUrl = '';
+let resultSession = null;
+function randomPlayerName() {
+  return PLAYER_NAME_PREFIXES[Math.floor(Math.random() * PLAYER_NAME_PREFIXES.length)] + ' ' + Math.floor(1000 + Math.random() * 9000);
+}
+function cleanPlayerName(value) {
+  return value.replace(/[|\r\n\t]/g, ' ').trim().slice(0, 40);
+}
+nameInput.value = randomPlayerName();
+try {
+  nameInput.value = cleanPlayerName(localStorage.getItem('zombie.playerName') || '') || nameInput.value;
+  discordWebhookUrl = localStorage.getItem('zombie.discordWebhook') || '';
+} catch (_) { /* 저장 차단 상태에서도 플레이 가능 */ }
+webhookInput.value = discordWebhookUrl;
+nameInput.addEventListener('change', () => {
+  nameInput.value = cleanPlayerName(nameInput.value) || randomPlayerName();
+  try { localStorage.setItem('zombie.playerName', nameInput.value); } catch (_) {}
+});
+function validWebhook(value) {
+  try {
+    const u = new URL(value);
+    return u.protocol === 'https:' && ['discord.com', 'discordapp.com'].includes(u.hostname)
+      && !u.username && !u.password && !u.port
+      && /^\/api(?:\/v\d+)?\/webhooks\/\d+\/[A-Za-z0-9_-]+\/?$/.test(u.pathname);
+  } catch (_) { return false; }
+}
+document.getElementById('webhookSave').addEventListener('click', () => {
+  const value = webhookInput.value.trim();
+  const status = document.getElementById('webhookSettingsStatus');
+  if (value && !validWebhook(value)) {
+    status.textContent = '디스코드에서 복사한 웹훅 URL을 확인해 주세요.';
+    return;
+  }
+  discordWebhookUrl = value;
+  try {
+    localStorage.setItem('zombie.discordWebhook', value);
+    status.textContent = value ? '저장했습니다. 게임 종료 시 결과를 전송합니다.' : '자동 전송을 해제했습니다.';
+  } catch (_) {
+    status.textContent = '브라우저 저장이 차단되어 이번 접속에서만 적용됩니다.';
+  }
+});
+function beginResultSession() {
+  nameInput.value = cleanPlayerName(nameInput.value) || randomPlayerName();
+  const connected = wifi.open && gameMode !== 'survival';
+  const mode = gameMode === 'pvp' ? 'PvP' : gameMode === 'party' ? '파티 생존' : '솔로 생존';
+  resultSession = {
+    nickname: nameInput.value, webhook: discordWebhookUrl,
+    mode: mode + (connected ? ' · 와이파이' : gameMode !== 'survival' ? ' · AI' : ''),
+    world: world, sent: false
+  };
+  document.getElementById('discordStatus').textContent = '';
+}
+function formatPlayDate(date) {
+  const parts = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
+  }).format(date);
+  return parts + ' (KST)';
+}
+async function sendDiscordResult(finalScore = score, finalWave = wave) {
+  const session = resultSession;
+  if (!session || session.sent) return;
+  session.sent = true; // 같은 판의 종료 처리가 겹쳐도 한 번만 전송
+  const status = document.getElementById('discordStatus');
+  const updateStatus = text => { if (resultSession === session) status.textContent = text; };
+  if (!session.webhook) { updateStatus('디스코드 전송 꺼짐 · 시작 화면에서 웹훅 URL을 설정하세요.'); return; }
+  if (!validWebhook(session.webhook)) { updateStatus('디스코드 전송 실패 · 웹훅 URL을 확인해 주세요.'); return; }
+  const worldName = ['좀비 도시', '할로윈 나이트', '얼음왕국'][session.world - 1];
+  const stage = session.mode + ' / ' + session.world + '세계 ' + worldName
+    + (gameMode === 'pvp' ? ' / 대전 스테이지' : ' / 웨이브 ' + finalWave);
+  const content = session.nickname + ' | ' + formatPlayDate(new Date()) + ' | ' + stage + ' | ' + finalScore;
+  const url = new URL(session.webhook);
+  url.searchParams.set('wait', 'true');
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+  updateStatus('디스코드에 결과 전송 중…');
+  try {
+    const response = await fetch(url.href, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+      signal: controller.signal
+    });
+    if (!response.ok) {
+      updateStatus(response.status === 429 ? '디스코드 전송 실패 · 전송 제한에 걸렸습니다.' : '디스코드 전송 실패 · HTTP ' + response.status + ' (웹훅 설정 확인)');
+      return;
+    }
+    updateStatus('디스코드에 결과를 전송했습니다.');
+  } catch (_) {
+    updateStatus('디스코드 전송을 확인하지 못했습니다. 네트워크·브라우저 설정과 채널을 확인하세요.');
+  } finally { clearTimeout(timeout); }
+}
+
 
 /* ───────────── 직업 ───────────── */
 let playerClass = 'ranged';
@@ -1727,6 +1848,7 @@ function initGame() {
 function startGame() {
   if (wifi.role === 'guest') return;      // 참가자는 호스트가 시작해야 한다
   initGame();
+  beginResultSession();
   state = 'playing';
   mouse.down = false;
   fireLocked = pointerDown;
@@ -2744,6 +2866,7 @@ function damagePlayer(amount) {
 }
 
 function endGame() {
+  if (gameOver) return;
   gameOver = true;
   state = 'over';
   lastScore = score;
@@ -2754,7 +2877,8 @@ function endGame() {
   document.getElementById('msgTitle').textContent = gameMode === 'pvp' ? '패배' : '게임 오버';
   document.getElementById('msgScore').textContent = gameMode === 'pvp' ? foe + '에게 패배했습니다  (점수 ' + score + ')' : '최종 점수: ' + score + '  (웨이브 ' + wave + ')';
   document.getElementById('centerMsg').style.display = 'block';
-  wifiSend({ t:'over', title: gameMode === 'pvp' ? '승리!' : '게임 오버', msg: gameMode === 'pvp' ? '호스트를 쓰러뜨렸습니다' : '모두 쓰러졌습니다  (웨이브 ' + wave + ')' });
+  sendDiscordResult();
+  wifiSend({ t:'over', score:score, wave:wave, title: gameMode === 'pvp' ? '승리!' : '게임 오버', msg: gameMode === 'pvp' ? '호스트를 쓰러뜨렸습니다' : '모두 쓰러졌습니다  (웨이브 ' + wave + ')' });
 }
 
 document.getElementById('startBtn').addEventListener('click', startGame);
@@ -4585,7 +4709,8 @@ function endPvp(win) {
   document.getElementById('msgTitle').textContent = '승리!';
   document.getElementById('msgScore').textContent = foe + '를 쓰러뜨렸습니다  (점수 ' + score + ', 승리 보너스 +300)';
   document.getElementById('centerMsg').style.display = 'block';
-  wifiSend({ t:'over', title:'패배', msg:'호스트에게 패배했습니다' });
+  sendDiscordResult();
+  wifiSend({ t:'over', score:score, wave:wave, title:'패배', msg:'호스트에게 패배했습니다' });
 }
 
 /* ══════════════════════════════════════════
@@ -4634,11 +4759,13 @@ function showHub() {
   gameMode = 'survival';
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('modePick').classList.add('hidden');
+  document.getElementById('hubScreen').insertBefore(document.getElementById('playerSettings'), document.getElementById('hubCoin'));
   document.getElementById('hubScreen').classList.remove('hidden');
   document.getElementById('hubCoin').textContent = '보유 포인트: ' + coins;
 }
 
 function enterWorld(n, mode) {
+  document.getElementById('startScreen').insertBefore(document.getElementById('playerSettings'), document.getElementById('worldRow'));
   gameMode = mode;
   inHub = false;
   document.getElementById('hubScreen').classList.add('hidden');
@@ -4944,6 +5071,7 @@ function wifiHandle(m) {
   else if (m.t === 's') guestApply(m);
   else if (m.t === 'ban') showWaveBanner(m.text, m.sub);
   else if (m.t === 'over') {
+    sendDiscordResult(m.score ?? score, m.wave ?? wave);
     document.getElementById('msgTitle').textContent = m.title;
     document.getElementById('msgScore').textContent = m.msg;
     document.getElementById('restartBtn').style.display = 'none';
@@ -5022,6 +5150,7 @@ function guestStart(m) {
   inHub = true;
   state = 'guest';
   setWorld(m.world);
+  beginResultSession();
   setGuestClass(m.cls);
   canvas.width = m.cw; canvas.height = m.ch;
   canvas.style.width = '100vw'; canvas.style.height = '100vh'; canvas.style.objectFit = 'contain';

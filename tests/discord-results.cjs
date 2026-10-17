@@ -81,3 +81,23 @@ test('wifi guest reports its nickname and final host score once', async ({ page 
   expect(payloads).toHaveLength(1);
   expect(payloads[0].content).toMatch(/^참가자 \| .*파티 생존 · 와이파이 \/ 1세계 좀비 도시 \/ 웨이브 7 \| 654$/);
 });
+
+test('default webhook sends without setup and clearing it stays disabled after reload', async ({ page }) => {
+  let count = 0;
+  await page.route('https://discord.com/api/webhooks/**', async route => {
+    count++;
+    await route.fulfill({ status: 200, body: '{}' });
+  });
+  await page.goto(pageUrl);
+  await page.evaluate(() => { enterWorld(1, 'survival'); startGame(); endGame(); });
+  await expect(page.locator('#discordStatus')).toHaveText('디스코드에 결과를 전송했습니다.');
+  expect(count).toBe(1);
+  await page.locator('#menuBtn').click();
+  await page.locator('#playerSettings summary').click();
+  await page.locator('#discordWebhook').fill('');
+  await page.locator('#webhookSave').click();
+  await page.reload();
+  await page.evaluate(() => { enterWorld(1, 'survival'); startGame(); endGame(); });
+  await expect(page.locator('#discordStatus')).toContainText('전송 꺼짐');
+  expect(count).toBe(1);
+});

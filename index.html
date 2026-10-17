@@ -640,7 +640,7 @@
     <p id="playerNameHint">자동으로 만든 이름을 자유롭게 수정하세요.</p>
     <details>
       <summary>디스코드 결과 전송 설정</summary>
-      <p>웹훅 URL을 저장하면 게임 종료 시 결과를 자동 전송합니다. 이 브라우저에만 저장됩니다.</p>
+      <p>실습용 채널로 결과를 자동 전송합니다. URL 변경은 이 브라우저에 저장되며, 비우고 저장하면 전송을 끕니다.</p>
       <label for="discordWebhook">디스코드 웹훅 URL</label>
       <input id="discordWebhook" type="password" autocomplete="off" placeholder="https://discord.com/api/webhooks/…">
       <button id="webhookSave" type="button">설정 저장</button>
@@ -840,11 +840,12 @@ let lastScore = null, bestScore = 0;   // 시작 화면에 표시할 최근/최�
 
 const rnd = (a, b) => a + Math.random()*(b-a);
 
-// 서버 없이 브라우저에서 직접 전송한다. URL은 이 브라우저에만 저장한다.
+// 실습용: 서버 없이 브라우저에서 직접 전송한다. 설정 화면에서 기본 URL을 변경하거나 전송을 끌 수 있다.
 const PLAYER_NAME_PREFIXES = ['성실한 다람쥐', '부지런한 두더지', '게으른 나무늘보', '귀여운 고양이'];
 const nameInput = document.getElementById('playerName');
 const webhookInput = document.getElementById('discordWebhook');
-let discordWebhookUrl = '';
+const DEFAULT_DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/1560825496768614507/TZZmEAIHwsZxIn1vVfidrd4Lxo_E8kkPTJVs4ULhC7TPSlkeRgYvzhyRhGc3szDtNkBp';
+let discordWebhookUrl = DEFAULT_DISCORD_WEBHOOK;
 let resultSession = null;
 function randomPlayerName() {
   return PLAYER_NAME_PREFIXES[Math.floor(Math.random() * PLAYER_NAME_PREFIXES.length)] + ' ' + Math.floor(1000 + Math.random() * 9000);
@@ -855,7 +856,7 @@ function cleanPlayerName(value) {
 nameInput.value = randomPlayerName();
 try {
   nameInput.value = cleanPlayerName(localStorage.getItem('zombie.playerName') || '') || nameInput.value;
-  discordWebhookUrl = localStorage.getItem('zombie.discordWebhook') || '';
+  discordWebhookUrl = localStorage.getItem('zombie.discordWebhook') ?? DEFAULT_DISCORD_WEBHOOK;
 } catch (_) { /* 저장 차단 상태에서도 플레이 가능 */ }
 webhookInput.value = discordWebhookUrl;
 nameInput.addEventListener('change', () => {

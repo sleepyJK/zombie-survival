@@ -4658,11 +4658,16 @@ function enterWorld(n, mode) {
   gameMode = mode;
   inHub = false;
   document.getElementById('hubScreen').classList.add('hidden');
-  document.getElementById('startScreen').classList.remove('hidden');
   setWorld(n);
-  document.getElementById('startTitle').textContent = ({1:'1세계 · 좀비 도시',2:'2세계 · 할로윈 나이트',3:'3세계 · 얼음왕국',4:'4세계 · 볼케이노 마을'})[n];
-  document.getElementById('worldRow').classList.toggle('hidden', mode === 'survival'); // 선택한 세계만 보여준다
+  document.getElementById('worldRow').classList.add('hidden');
   applyModeLabels();
+  if (mode === 'survival') {
+    // 허브에서 세계를 누르면 직업 선택 화면을 다시 거치지 않고 바로 해당 세계 시작
+    document.getElementById('startScreen').classList.add('hidden');
+    startGame();
+  } else {
+    document.getElementById('startScreen').classList.remove('hidden');
+  }
 }
 
 function applyModeLabels() {

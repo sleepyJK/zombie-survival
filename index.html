@@ -4655,19 +4655,17 @@ function showHub() {
 }
 
 function enterWorld(n, mode) {
+  // 허브에서 세계를 선택하면 해당 세계 전용 직업 선택 화면을 연다.
+  // 게임은 반드시 '시작' 버튼을 눌러야 시작한다.
   gameMode = mode;
   inHub = false;
   document.getElementById('hubScreen').classList.add('hidden');
-  setWorld(n);
+  document.getElementById('startScreen').classList.remove('hidden');
   document.getElementById('worldRow').classList.add('hidden');
+  setWorld(n);
+  document.getElementById('startTitle').textContent = ({1:'1세계 · 좀비 도시',2:'2세계 · 할로윈 나이트',3:'3세계 · 얼음왕국',4:'4세계 · 볼케이노 마을'})[n];
+  document.getElementById('startBtn').textContent = '▶ 게임 시작';
   applyModeLabels();
-  if (mode === 'survival') {
-    // 허브에서 세계를 누르면 직업 선택 화면을 다시 거치지 않고 바로 해당 세계 시작
-    document.getElementById('startScreen').classList.add('hidden');
-    startGame();
-  } else {
-    document.getElementById('startScreen').classList.remove('hidden');
-  }
 }
 
 function applyModeLabels() {
@@ -4675,7 +4673,7 @@ function applyModeLabels() {
   const wn = world === 4 ? '볼케이노 마을' : (world === 3 ? '얼음왕국' : (world === 2 ? '할로윈 나이트' : '좀비 도시'));
   if (gameMode === 'pvp') sub.textContent = 'PvP · AI 대전 — ' + wn;
   else if (gameMode === 'party') sub.textContent = '파티 · AI와 함께 생존 — ' + wn;
-  document.getElementById('startBtn').textContent = gameMode === 'pvp' ? '대전 시작' : '▶ ' + wn + ' 게임 시작';
+  document.getElementById('startBtn').textContent = gameMode === 'pvp' ? '대전 시작' : '▶ 게임 시작';
 }
 
 function openModePick(kind) {
@@ -5154,6 +5152,7 @@ function setWorld(n) {
   });
   // 세계마다 쓰는 직업이 다르다 — 그 세계에서 마지막으로 쓴 직업(없으면 기본 직업)으로 전환
   if ((CLASS_DEFS[playerClass].world||1) === prevWorld) lastClassOfWorld[prevWorld] = playerClass;
+  if (CLASS_DEFS[info.def] && CLASS_DEFS[info.def].price === 0) unlockedClasses[info.def] = true;
   const want = lastClassOfWorld[n] || info.def;
   playerClass = (unlockedClasses[want] ? want : info.def);
   behav = baseOf(playerClass);

@@ -4684,8 +4684,8 @@ function adventureOpenMap(n) {
   gameMode='survival';
   adventureMode=true;
   inHub=false;
-  setWorld(n);
   document.getElementById('hubScreen').classList.add('hidden');
+  document.getElementById('adventureMap').classList.remove('hidden');
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('adventureWin').classList.add('hidden');
   document.getElementById('centerMsg').style.display='none';
@@ -4787,7 +4787,7 @@ function openModePick(kind) {
 document.querySelectorAll('.worldCard').forEach(c => {
   if (c.dataset.world) {
     drawWorldPreview(c.querySelector('canvas'), Number(c.dataset.world));
-    c.addEventListener('click', () => adventureOpenMap(Number(c.dataset.world)));
+    c.onclick = () => adventureOpenMap(Number(c.dataset.world));
   } else {
     c.addEventListener('click', () => showHubToast('🔒 ' + c.dataset.lock + '는 아직 열리지 않았어요'));
   }
@@ -5247,7 +5247,7 @@ function setWorld(n) {
     b.classList.toggle('active', Number(b.dataset.world) === n);
   });
   // 세계마다 쓰는 직업이 다르다 — 그 세계에서 마지막으로 쓴 직업(없으면 기본 직업)으로 전환
-  if ((CLASS_DEFS[playerClass].world||1) === prevWorld) lastClassOfWorld[prevWorld] = playerClass;
+  if (CLASS_DEFS[playerClass] && (CLASS_DEFS[playerClass].world||1) === prevWorld) lastClassOfWorld[prevWorld] = playerClass;
   if (CLASS_DEFS[info.def] && CLASS_DEFS[info.def].price === 0) unlockedClasses[info.def] = true;
   const want = lastClassOfWorld[n] || info.def;
   playerClass = (unlockedClasses[want] ? want : info.def);

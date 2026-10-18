@@ -1772,7 +1772,7 @@ function refresh(){const show=state==='playing'&&!gameOver;layer.classList.toggl
 initGame();
   dungeonInit();
   state = 'playing';
-  try { draw(); } catch(e) { console.error('Initial stage render:',e); }
+  try { draw(); } catch(e) { gameErrorDisplay('첫 화면 그리기',e); try { emergencyStageDraw(); } catch(_){} }
   document.getElementById('adventureMap').classList.add('hidden');
   document.getElementById('adventureWin').classList.add('hidden');
   mouse.down = false;
@@ -4504,17 +4504,44 @@ function draw() {
   ctx.restore();
 }
 
+function gameErrorDisplay(label,e){
+  console.error(label,e);
+  let el=document.getElementById('gameErrorDisplay');
+  if(!el){
+    el=document.createElement('div');el.id='gameErrorDisplay';
+    el.style.cssText='position:fixed;top:42%;left:8%;width:84%;z-index:99999;background:#20121ef2;border:2px solid #ff7777;border-radius:14px;padding:18px;box-sizing:border-box;color:white;font:16px sans-serif;white-space:pre-wrap;pointer-events:none;text-align:center';
+    document.body.appendChild(el);
+  }
+  el.textContent='⚠️ 게임 오류 발견\\n'+label+'\\n'+String(e&&e.message||e)+'\\n이 화면을 사진으로 보내주세요.';
+}
+function emergencyStageDraw(){
+  if(!adventureMode||state!=='playing')return;
+  const W=canvas.width,H=canvas.height;
+  ctx.save();
+  const bg=['','#283a42','#3d2746','#1b4968','#52271c'][world]||'#283a42';
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='#ffffff25';ctx.lineWidth=1;
+  for(let x=0;x<W;x+=55){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=55){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  if(player){
+    ctx.shadowColor='#9ceaff';ctx.shadowBlur=20;
+    ctx.fillStyle='#d0f5ff';ctx.beginPath();ctx.arc(player.x,player.y,20,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+  }
+  ctx.fillStyle='#ffffff';ctx.font='bold 20px sans-serif';ctx.textAlign='center';
+  ctx.fillText(world+'-'+adventureStage+' 모험',W/2,75);
+  ctx.restore();
+}
 function loop() {
   // 한 프레임의 오류 때문에 아이패드에서 화면 전체가 멈추지 않도록 한다.
   try {
     if (wifi.role === 'guest' && wifi.playing) { guestTick(); draw(); return; }
     try { update(); } catch(e) {
-      if (!loop.lastUpdateError || loop.lastUpdateError !== String(e)) { console.error('Game update:',e); loop.lastUpdateError=String(e); }
+      if (!loop.lastUpdateError || loop.lastUpdateError !== String(e)) { gameErrorDisplay('게임 이동·적 생성',e); loop.lastUpdateError=String(e); }
     }
     if (wifi.hosting && wifi.open && state !== 'menu') { wifi.frame++; if (wifi.frame % 2 === 0) wifiSendSnap(); }
     draw();
   } catch(e) {
-    if (!loop.lastDrawError || loop.lastDrawError !== String(e)) { console.error('Game render:',e); loop.lastDrawError=String(e); }
+    if (!loop.lastDrawError || loop.lastDrawError !== String(e)) { gameErrorDisplay('게임 화면 그리기',e); loop.lastDrawError=String(e); }
     // 기본 모험 배경과 구슬 캐릭터는 다른 렌더러에 오류가 나도 표시한다.
     if (adventureMode && state==='playing' && player) {
       try {
@@ -4525,7 +4552,7 @@ function loop() {
         ctx.shadowColor='#67dfff';ctx.shadowBlur=20;ctx.fillStyle='#b5efff';
         ctx.beginPath();ctx.arc(player.x,player.y,Math.max(18,player.r),0,Math.PI*2);ctx.fill();
         ctx.restore();
-      } catch(fallbackError) { console.error('Fallback render:',fallbackError); }
+      } catch(fallbackError) { gameErrorDisplay('예비 화면 그리기',fallbackError); }
     }
   } finally { requestAnimationFrame(loop); }
 }

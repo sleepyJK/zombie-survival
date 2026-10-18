@@ -593,10 +593,10 @@
 #adventureCanvas{position:fixed!important;left:0!important;top:0!important;width:100vw!important;height:100vh!important;z-index:30!important;pointer-events:none!important;display:none}
 #hud,#waveBanner,#bossBar,#controlsPanel{z-index:6}
 #startScreen,#hubScreen,#adventureMap,#adventureWin,#modePick{z-index:40}
-</style>
+#startScreen #worldRow{display:none!important} #startScreen #classPanel{display:block!important} #stageOrb{position:fixed;z-index:35;display:none;width:44px;height:44px;border:3px solid white;border-radius:50%;box-sizing:border-box;pointer-events:none;transform:translate(-50%,-50%);background:radial-gradient(circle at 30% 25%,white,#a3e9ff 40%,#367ac7 100%);box-shadow:0 0 20px #6bdfff} #stageOrb:after{content:'••';position:absolute;top:7px;left:11px;color:#16446a;letter-spacing:3px}</style>
 </head>
 <body>
-<canvas id="gameCanvas"></canvas><canvas id="adventureCanvas" aria-hidden="true"></canvas><div id="touchControls"><div class="touchStick left" id="touchMove"><div class="touchKnob"></div></div><div class="touchStick right" id="touchAim"><div class="touchKnob"></div></div><button id="touchReload" type="button">↻ 재장전</button></div>
+<canvas id="gameCanvas"></canvas><canvas id="adventureCanvas" aria-hidden="true"></canvas><div id="stageOrb"></div><div id="touchControls"><div class="touchStick left" id="touchMove"><div class="touchKnob"></div></div><div class="touchStick right" id="touchAim"><div class="touchKnob"></div></div><button id="touchReload" type="button">↻ 재장전</button></div>
 <div id="hud" class="hidden">
   <div>❤️ 체력</div>
   <div class="bar-bg"><div id="hpBar" class="bar-fill"></div></div>
@@ -4803,6 +4803,7 @@ function adventureChooseStage(n,i){
   document.getElementById('startTitle').textContent=n+'세계 · '+adventureNames[n];
   document.getElementById('startSub').textContent=n+'-'+i+' · 직업 선택 후 모험 시작';
   document.getElementById('startBtn').textContent='▶ '+n+'-'+i+' 시작';
+  document.getElementById('worldRow').style.display='none';
   const bossList=activeBosses();
   const boss=bossList[(i-1)%bossList.length];
   let bossInfo=document.getElementById('adventureBossInfo');
@@ -5478,7 +5479,11 @@ function adventureRenderLoop(){
   requestAnimationFrame(adventureRenderLoop);
   const visible=adventureMode && gameMode==='survival' && state==='playing';
   adventureCanvas.style.display=visible?'block':'none';
+  const orbEl=document.getElementById('stageOrb');
+  orbEl.style.display=visible?'block':'none';
   if(!visible)return;
+  orbEl.style.left=(player&&Number.isFinite(player.x)?player.x:window.innerWidth/2)+'px';
+  orbEl.style.top=(player&&Number.isFinite(player.y)?player.y:window.innerHeight/2)+'px';
   try {
     const W=window.innerWidth,H=window.innerHeight;
     if(adventureCanvas.width!==W||adventureCanvas.height!==H){adventureCanvas.width=W;adventureCanvas.height=H;}

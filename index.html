@@ -3012,6 +3012,7 @@ function update() {
   player.x = Math.max(player.r, Math.min(canvas.width - player.r, player.x));
   player.y = Math.max(player.r, Math.min(canvas.height - player.r, player.y));
   player.angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+  if(adventureMode && gameMode==='survival' && !dungeon) dungeonInit();
   dungeonUpdate();
 
   if (mouse.down && !fireLocked && behav !== 'knight') shoot();
@@ -4352,7 +4353,7 @@ function drawHalloweenDecor() {
 }
 
 function drawGrid() {
-  if (adventureMode && gameMode==='survival') return;
+  if (adventureMode && gameMode==='survival' && dungeon) return;
   if (world === 4) {ctx.save();for(let i=0;i<24;i++){const x=((i*191+37)%Math.max(1,canvas.width)),y=((i*137+79)%Math.max(1,canvas.height));ctx.fillStyle=i%3===0?'#ff8d30':'#792b18';ctx.beginPath();ctx.ellipse(x,y,16+i%5*6,5+i%4*3,i*.3,0,Math.PI*2);ctx.fill();}ctx.restore();}
   if (world === 2) drawHalloweenDecor();
   else if (world === 3) drawWinterDecor();
@@ -4369,7 +4370,7 @@ function draw() {
   if (shake > 0) ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
 
   drawGrid();
-  if(dungeon && state !== 'menu') dungeonDraw();
+  if(adventureMode && gameMode==='survival' && state !== 'menu') { if(!dungeon) dungeonInit(); dungeonDraw(); }
 
   if (state === 'menu') { drawMenuScene(); ctx.restore(); return; }
 
@@ -4456,6 +4457,9 @@ function draw() {
   zombies.forEach(drawZombie);
   drawMates();
   drawPlayer();
+  if(adventureMode && gameMode==='survival') {
+    ctx.save();ctx.strokeStyle='#ffffff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(player.x,player.y,player.r+5,0,Math.PI*2);ctx.stroke();ctx.restore();
+  }
   dungeonHud();
 
   // 보스 탄환
@@ -4728,6 +4732,8 @@ function adventureChooseStage(n,i){
   document.getElementById('adventureMap').classList.add('hidden');
   enterWorld(n,'survival');
   document.getElementById('startSub').textContent='모험 '+n+'-'+i+' · 직업을 선택하고 시작하세요';
+  document.getElementById('startTitle').textContent=n+'세계 · '+adventureNames[n];
+  document.getElementById('startSub').textContent=n+'-'+i+' · 직업 선택 후 모험 시작';
   document.getElementById('startBtn').textContent='▶ '+n+'-'+i+' 시작';
 }
 
@@ -4750,6 +4756,8 @@ function dungeonInit(){
     ready:false,finished:false,notice:'🔑 열쇠를 찾고 스위치를 밟으세요!'
   };
   player.x=W*.48;player.y=H*.82;
+  player.r=Math.max(18,player.r);
+  dungeon.notice='🧟 좀비와 보스를 물리치고 열쇠를 찾으세요!';
 }
 function dungeonNear(p,x,y,r){return Math.hypot(p.x-x,p.y-y)<r;}
 function dungeonUpdate(){
@@ -4786,29 +4794,35 @@ function dungeonUpdate(){
 function dungeonDraw(){
   if(!dungeon||!adventureMode||gameMode!=='survival')return;
   const d=dungeon,W=canvas.width,H=canvas.height;
+  const palettes={1:{ground:'#313c44',tile:'#657780',wall:'#65717c',light:'#e9bf78',edge:'#25313b'},2:{ground:'#2d1b40',tile:'#785193',wall:'#684b83',light:'#ffb448',edge:'#171024'},3:{ground:'#142a45',tile:'#79b7df',wall:'#5489b3',light:'#b9f5ff',edge:'#163b5b'},4:{ground:'#391c1b',tile:'#a34d2b',wall:'#793e39',light:'#ffab3b',edge:'#251115'}};
+  const theme=palettes[world]||palettes[1];
   ctx.save();
-  // Snowy stone tiles and icy seams: top-down ice kingdom dungeon aesthetic
-  ctx.fillStyle=world===4?'#291b21':world===2?'#242035':world===1?'#202e38':'#142a45';
+  // Four distinct world themes: city, Halloween, ice, volcano
+  ctx.fillStyle=theme.ground;
   ctx.fillRect(0,0,W,H);
   for(let y=0;y<H;y+=55)for(let x=0;x<W;x+=55){
-    ctx.fillStyle=(Math.floor(x/55+y/55)%2===0)?'#ffffff08':'#75dfff08';
+    ctx.fillStyle=(Math.floor(x/55+y/55)%2===0)?theme.tile+'22':theme.tile+'0c';
     ctx.fillRect(x+2,y+2,51,51);
-    ctx.strokeStyle='#a6dcff16';ctx.strokeRect(x+1,y+1,53,53);
+    ctx.strokeStyle=theme.light+'20';ctx.strokeRect(x+1,y+1,53,53);
   }
   // icy perimeter and glowing pillars
   for(let x=0;x<W;x+=70){
-    ctx.fillStyle='#507ca0';ctx.fillRect(x,0,62,16);ctx.fillRect(x,H-16,62,16);
-    ctx.fillStyle='#a3dfff';ctx.fillRect(x+4,1,16,4);
+    ctx.fillStyle=theme.wall;ctx.fillRect(x,0,62,16);ctx.fillRect(x,H-16,62,16);
+    ctx.fillStyle=theme.light;ctx.fillRect(x+4,1,16,4);
   }
   for(let y=0;y<H;y+=70){
-    ctx.fillStyle='#426b89';ctx.fillRect(0,y,16,62);ctx.fillRect(W-16,y,16,62);
+    ctx.fillStyle=theme.wall;ctx.fillRect(0,y,16,62);ctx.fillRect(W-16,y,16,62);
   }
   for(const b of d.blocks){
-    ctx.fillStyle='#101b2c';ctx.fillRect(b.x+7,b.y+8,b.w,b.h);
-    ctx.fillStyle='#5489b3';ctx.fillRect(b.x,b.y,b.w,b.h);
-    ctx.fillStyle='#b0eaff';ctx.fillRect(b.x,b.y,b.w,7);
-    ctx.strokeStyle='#1a405d';ctx.lineWidth=3;ctx.strokeRect(b.x,b.y,b.w,b.h);
+    ctx.fillStyle=theme.edge;ctx.fillRect(b.x+7,b.y+8,b.w,b.h);
+    ctx.fillStyle=theme.wall;ctx.fillRect(b.x,b.y,b.w,b.h);
+    ctx.fillStyle=theme.light;ctx.fillRect(b.x,b.y,b.w,7);
+    ctx.strokeStyle=theme.edge;ctx.lineWidth=3;ctx.strokeRect(b.x,b.y,b.w,b.h);
   }
+  // World scenery: ruined city / jack-o-lanterns / snow pines / lava vents
+  ctx.font='30px sans-serif';ctx.textAlign='center';
+  const scenery={1:['🏚️','🚧','🪦','🚗'],2:['🎃','🪦','🕸️','🦇'],3:['🌲','❄️','🧊','⛄'],4:['🌋','🔥','🪨','🌡️']}[world]||['🏚️'];
+  [[.13,.2],[.88,.32],[.14,.63],[.87,.86],[.46,.12],[.58,.91]].forEach((p,i)=>{ctx.fillText(scenery[(i+adventureStage)%scenery.length],W*p[0],H*p[1]);});
   const circle=(x,y,r,color,glow)=>{ctx.shadowColor=glow||color;ctx.shadowBlur=16;ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;};
   if(!d.key.taken){circle(d.key.x,d.key.y,15,'#f7cf45');ctx.font='24px sans-serif';ctx.textAlign='center';ctx.fillText('🔑',d.key.x,d.key.y+8);}
   ctx.fillStyle=d.switch.pressed?'#53e4ad':'#5d87cb';ctx.fillRect(d.switch.x-21,d.switch.y-15,42,30);
@@ -4826,7 +4840,7 @@ function dungeonHud(){
   const d=dungeon;
   ctx.save();ctx.fillStyle='#081728dd';ctx.fillRect(Math.max(0,canvas.width/2-225),8,450,54);
   ctx.fillStyle='#e7f6ff';ctx.textAlign='center';ctx.font='bold 17px sans-serif';
-  ctx.fillText(world+'-'+adventureStage+'  ❄ 모험 방탈출',canvas.width/2,29);
+  ctx.fillText(world+'-'+adventureStage+'  '+({1:'🏙️ 좀비 도시',2:'🎃 할로윈 나이트',3:'❄️ 얼음왕국',4:'🌋 볼케이노 마을'}[world]||'모험'),canvas.width/2,29);
   ctx.font='13px sans-serif';
   ctx.fillText(d.ready?(d.key.taken&&d.switch.pressed?'🌀 출구로 이동하세요!':'🔑 열쇠와 스위치를 찾아 출구를 여세요!'):d.notice,canvas.width/2,49);
   ctx.restore();

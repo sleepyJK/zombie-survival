@@ -1862,7 +1862,7 @@ function buildBossDex() {
 }
 
 function buildClassPanel() {
-  const tierOrder = ['common','rare','hero','mythic','legend','god'];
+  const tierOrder = ['common','rare','hero','legend','mythic','god'];
   if (!selectedTier) selectedTier = (CLASS_DEFS[playerClass] || CLASS_DEFS.ranged).tier;
 
   // 가로 등급 탭
@@ -4660,16 +4660,16 @@ function enterWorld(n, mode) {
   document.getElementById('hubScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.remove('hidden');
   setWorld(n);
-  document.getElementById('worldRow').classList.toggle('hidden', mode === 'survival');   // PvP·파티는 여기서 세계를 고른다
+  document.getElementById('worldRow').style.display = mode === 'survival' ? 'none' : 'flex'; // 세계 선택은 허브에서 한 번만
   applyModeLabels();
 }
 
 function applyModeLabels() {
   const sub = document.getElementById('startSub');
-  const wn = world === 3 ? '얼음왕국' : (world === 2 ? '할로윈 나이트' : '좀비 도시');
+  const wn = world === 4 ? '볼케이노 마을' : (world === 3 ? '얼음왕국' : (world === 2 ? '할로윈 나이트' : '좀비 도시'));
   if (gameMode === 'pvp') sub.textContent = 'PvP · AI 대전 — ' + wn;
   else if (gameMode === 'party') sub.textContent = '파티 · AI와 함께 생존 — ' + wn;
-  document.getElementById('startBtn').textContent = gameMode === 'pvp' ? '대전 시작' : '게임 시작';
+  document.getElementById('startBtn').textContent = gameMode === 'pvp' ? '대전 시작' : '▶ ' + wn + ' 모험 시작';
 }
 
 function openModePick(kind) {
@@ -5108,6 +5108,18 @@ addW4('w4_assassin','assassin',{icon:'🗡️',name:'불꽃 암살자',price:160
 addW4('w4_dragon','dragonlord',{icon:'🐉',name:'화산 용기사',price:2800,tier:'legend',slash:'#ff5722',desc:'강력한 근접 공격과 높은 체력을 갖춘 용기사.',fireDesc:'용의 검격',stats:{damage:100,maxHp:230,armor:0.24}});
 addW4('w4_king','iceking',{icon:'👑',name:'마그마 제왕',price:4800,tier:'god',desc:'세 갈래의 강력한 투사체로 적을 제압한다.',fireDesc:'삼중 마그마 창',stats:{damage:92,maxHp:260,magazine:12,fireDelay:350}});
 
+// 4세계 직업 확장: 여섯 등급만 유지 (일반/희귀/영웅/전설/신화/GOD)
+addW4('w4_spear','sniper',{icon:'🏹',name:'용암 창잡이',price:650,tier:'rare',desc:'관통하는 창을 멀리 날리는 사수.',fireDesc:'원거리 관통 창',stats:{damage:80,pierce:5,fireDelay:560}});
+addW4('w4_shield','knight',{icon:'🛡️',name:'현무암 방패병',price:720,tier:'rare',desc:'높은 방어력과 방패 방어로 버티는 기사.',fireDesc:'검격과 연속 터치 방패',stats:{maxHp:200,armor:.34,damage:32}});
+addW4('w4_alchemist','scientist',{icon:'⚗️',name:'화산 연금술사',price:850,tier:'rare',desc:'산성·맹독·냉기·전격 물약을 무작위로 던진다.',fireDesc:'무작위 원소 물약',stats:{damage:28,magazine:8}});
+addW4('w4_beast','summoner',{icon:'🐺',name:'잿불 조련사',price:1100,tier:'hero',desc:'소환수를 키워 함께 전투한다.',fireDesc:'소환수 지원과 공격',stats:{damage:28,maxHp:140}});
+addW4('w4_necro','necromancer',{icon:'💀',name:'재의 강령술사',price:1250,tier:'hero',desc:'쓰러진 적을 이용해 전장을 장악한다.',fireDesc:'강령술 공격',stats:{damage:33,maxHp:125}});
+addW4('w4_tank','juggernaut',{icon:'🗿',name:'화산 거인',price:1400,tier:'hero',desc:'느리지만 튼튼하고 강력한 근접 공격.',fireDesc:'묵직한 근접 강타',stats:{maxHp:280,armor:.28,speed:2.6,damage:65}});
+addW4('w4_storm','frostmage',{icon:'🌪️',name:'화산 폭풍술사',price:1850,tier:'mythic',desc:'광역 마법으로 적의 움직임을 방해한다.',fireDesc:'광역 원소 마법',stats:{damage:42,fireDelay:260}});
+addW4('w4_machine','machinelord',{icon:'🤖',name:'마그마 기계왕',price:2200,tier:'mythic',desc:'기계 장비를 이용해 지속적으로 공격한다.',fireDesc:'기계식 연속 공격',stats:{damage:45,armor:.18}});
+addW4('w4_reaper','reaper',{icon:'☠️',name:'흑염 사신',price:3200,tier:'legend',desc:'사신의 강력한 공격으로 적을 처치한다.',fireDesc:'사신의 일격',stats:{damage:110,speed:4.3}});
+addW4('w4_empress','empress',{icon:'👸',name:'불꽃 여제',price:3700,tier:'legend',desc:'높은 공격력과 특별한 전투 능력을 가진 여제.',fireDesc:'여제의 원소 공격',stats:{damage:85,maxHp:190}});
+addW4('w4_demon','archdemon',{icon:'😈',name:'화산 마왕',price:5900,tier:'god',desc:'최상위 근접 공격력과 생존력을 가진 마왕.',fireDesc:'마왕의 파괴 공격',stats:{damage:150,maxHp:300,armor:.2}});
 const WORLD_INFO = {
   1: { title:'좀비 서바이벌', color:'', shadow:'', sub:'World 1 · Zombie Survival', def:'ranged',
        tag:'몰려오는 좀비를 막아내고, 웨이브마다 강화를 골라 성장하세요.<br>세 번째 웨이브마다 서로 다른 보스가 순서대로 찾아옵니다.',

@@ -4660,7 +4660,8 @@ function enterWorld(n, mode) {
   document.getElementById('hubScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.remove('hidden');
   setWorld(n);
-  document.getElementById('worldRow').style.display = mode === 'survival' ? 'none' : 'flex'; // 세계 선택은 허브에서 한 번만
+  document.getElementById('startTitle').textContent = ({1:'1세계 · 좀비 도시',2:'2세계 · 할로윈 나이트',3:'3세계 · 얼음왕국',4:'4세계 · 볼케이노 마을'})[n];
+  document.getElementById('worldRow').classList.toggle('hidden', mode === 'survival'); // 선택한 세계만 보여준다
   applyModeLabels();
 }
 
@@ -4669,7 +4670,7 @@ function applyModeLabels() {
   const wn = world === 4 ? '볼케이노 마을' : (world === 3 ? '얼음왕국' : (world === 2 ? '할로윈 나이트' : '좀비 도시'));
   if (gameMode === 'pvp') sub.textContent = 'PvP · AI 대전 — ' + wn;
   else if (gameMode === 'party') sub.textContent = '파티 · AI와 함께 생존 — ' + wn;
-  document.getElementById('startBtn').textContent = gameMode === 'pvp' ? '대전 시작' : '▶ ' + wn + ' 모험 시작';
+  document.getElementById('startBtn').textContent = gameMode === 'pvp' ? '대전 시작' : '▶ ' + wn + ' 게임 시작';
 }
 
 function openModePick(kind) {

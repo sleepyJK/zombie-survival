@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>은우 좀비서바이벌 · 4세계 해제</title>
+<title>좀비 서바이벌</title>
 <style>
   html, body {
     margin: 0; padding: 0; overflow: hidden;
@@ -568,7 +568,7 @@
   #upHint { font-size: 12px; color: #777; letter-spacing: 1px; }
 
 #touchControls{position:fixed;inset:0;pointer-events:none;z-index:80;display:none;touch-action:none}#touchControls.active{display:block}.touchStick{position:absolute;bottom:24px;width:124px;height:124px;border:2px solid #ffffff77;border-radius:50%;background:#1b30468c;pointer-events:auto;touch-action:none;user-select:none}.touchStick.left{left:clamp(48px,8vw,110px)}.touchStick.right{right:clamp(48px,8vw,110px);background:#60302e8c}.touchKnob{position:absolute;width:48px;height:48px;left:38px;top:38px;border-radius:50%;background:#a2d9ffb8}.right .touchKnob{background:#ffad8db8}#touchReload{position:absolute;right:clamp(70px,10vw,130px);bottom:163px;padding:13px 17px;border-radius:15px;background:#283a4de8;color:white;border:1px solid #ffffff88;font-size:16px;pointer-events:auto}@media (pointer:coarse){html,body,#gameCanvas{touch-action:none}}
-.worldCard.w4{border-color:#ff783f;box-shadow:0 0 18px rgba(255,90,25,.45)}.worldBtn.w4.active{border-color:#ff783f;color:#ffae73}</style>
+</style>
 </head>
 <body>
 <canvas id="gameCanvas"></canvas><div id="touchControls"><div class="touchStick left" id="touchMove"><div class="touchKnob"></div></div><div class="touchStick right" id="touchAim"><div class="touchKnob"></div></div><button id="touchReload" type="button">↻ 재장전</button></div>
@@ -632,7 +632,7 @@
     <button class="worldCard w1" data-world="1"><canvas width="320" height="200"></canvas><div class="wLabel" style="color:#5fe07a">1세계 · 좀비 도시</div></button>
     <button class="worldCard w2" data-world="2"><canvas width="320" height="200"></canvas><div class="wLabel" style="color:#ffb347">2세계 · 할로윈</div></button>
     <button class="worldCard w3" data-world="3"><canvas width="320" height="200"></canvas><div class="wLabel" style="color:#9fe8ff">3세계 · 얼음왕국</div></button>
-    <button class="worldCard w4" data-world="4" aria-label="4세계 볼케이노 마을 입장 가능"><canvas width="320" height="200"></canvas><div class="wLabel" style="color:#ff9b4b">🌋 4세계 · 볼케이노 마을 · 입장 가능</div></button>
+    <button class="worldCard locked" data-lock="4세계"><div class="wLabel">4세계</div><div class="lockIcon">🔒<span>잠금</span></div></button>
     <button class="worldCard locked" data-lock="5세계"><div class="wLabel">5세계</div><div class="lockIcon">🔒<span>잠금</span></div></button>
     <button class="worldCard locked" data-lock="6세계"><div class="wLabel">6세계</div><div class="lockIcon">🔒<span>잠금</span></div></button>
   </div>
@@ -715,7 +715,7 @@
   <div id="worldRow">
     <button class="worldBtn w1" data-world="1">🏙️ 1세계 · 좀비 도시</button>
     <button class="worldBtn w2" data-world="2">🎃 2세계 · 할로윈 나이트</button>
-    <button class="worldBtn w3" data-world="3">❄️ 3세계 · 얼음왕국</button><button class="worldBtn w4" data-world="4">🌋 4세계 · 볼케이노 마을</button>
+    <button class="worldBtn w3" data-world="3">❄️ 3세계 · 얼음왕국</button>
   </div>
 
   <p id="startScoreInfo" class="hidden">최근 점수: 0 · 최고 점수: 0</p>
@@ -1862,7 +1862,7 @@ function buildBossDex() {
 }
 
 function buildClassPanel() {
-  const tierOrder = ['common','rare','hero','legend','mythic','god'];
+  const tierOrder = ['common','rare','hero','mythic','legend','god'];
   if (!selectedTier) selectedTier = (CLASS_DEFS[playerClass] || CLASS_DEFS.ranged).tier;
 
   // 가로 등급 탭
@@ -4311,7 +4311,6 @@ function drawHalloweenDecor() {
 }
 
 function drawGrid() {
-  if (world === 4) {ctx.save();for(let i=0;i<24;i++){const x=((i*191+37)%Math.max(1,canvas.width)),y=((i*137+79)%Math.max(1,canvas.height));ctx.fillStyle=i%3===0?'#ff8d30':'#792b18';ctx.beginPath();ctx.ellipse(x,y,16+i%5*6,5+i%4*3,i*.3,0,Math.PI*2);ctx.fill();}ctx.restore();}
   if (world === 2) drawHalloweenDecor();
   else if (world === 3) drawWinterDecor();
   ctx.strokeStyle = world === 3 ? 'rgba(150,220,255,0.06)' : (world === 2 ? 'rgba(255,150,60,0.05)' : 'rgba(255,255,255,0.03)');
@@ -4606,8 +4605,6 @@ function endPvp(win) {
    로비(허브) — 세계 선택 · PvP · 파티
    ══════════════════════════════════════════ */
 function drawWorldPreview(cv, n) {
-  if(n===4){const g=cv.getContext('2d'),W=cv.width,H=cv.height;g.fillStyle='#27100c';g.fillRect(0,0,W,H);g.fillStyle='#713023';for(let i=0;i<9;i++){g.fillRect(i*45,100+(i%3)*14,35,65);}g.fillStyle='#ff7c22';g.beginPath();g.moveTo(0,185);g.lineTo(80,130);g.lineTo(160,175);g.lineTo(260,105);g.lineTo(W,140);g.lineTo(W,H);g.lineTo(0,H);g.fill();g.fillStyle='#ffcb55';for(let i=0;i<14;i++)g.fillRect((i*71)%W,(i*43)%H,4,8);return;}
-
   const g = cv.getContext('2d'), W = cv.width, H = cv.height;
   if (n === 1) {
     const gr = g.createRadialGradient(W/2,H/2,10,W/2,H/2,W*0.7); gr.addColorStop(0,'#2a4a2a'); gr.addColorStop(1,'#0c140c');
@@ -4655,25 +4652,21 @@ function showHub() {
 }
 
 function enterWorld(n, mode) {
-  // 허브에서 세계를 선택하면 해당 세계 전용 직업 선택 화면을 연다.
-  // 게임은 반드시 '시작' 버튼을 눌러야 시작한다.
   gameMode = mode;
   inHub = false;
   document.getElementById('hubScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.remove('hidden');
-  document.getElementById('worldRow').classList.add('hidden');
   setWorld(n);
-  document.getElementById('startTitle').textContent = ({1:'1세계 · 좀비 도시',2:'2세계 · 할로윈 나이트',3:'3세계 · 얼음왕국',4:'4세계 · 볼케이노 마을'})[n];
-  document.getElementById('startBtn').textContent = '▶ 게임 시작';
+  document.getElementById('worldRow').classList.toggle('hidden', mode === 'survival');   // PvP·파티는 여기서 세계를 고른다
   applyModeLabels();
 }
 
 function applyModeLabels() {
   const sub = document.getElementById('startSub');
-  const wn = world === 4 ? '볼케이노 마을' : (world === 3 ? '얼음왕국' : (world === 2 ? '할로윈 나이트' : '좀비 도시'));
+  const wn = world === 3 ? '얼음왕국' : (world === 2 ? '할로윈 나이트' : '좀비 도시');
   if (gameMode === 'pvp') sub.textContent = 'PvP · AI 대전 — ' + wn;
   else if (gameMode === 'party') sub.textContent = '파티 · AI와 함께 생존 — ' + wn;
-  document.getElementById('startBtn').textContent = gameMode === 'pvp' ? '대전 시작' : '▶ 게임 시작';
+  document.getElementById('startBtn').textContent = gameMode === 'pvp' ? '대전 시작' : '게임 시작';
 }
 
 function openModePick(kind) {
@@ -5099,31 +5092,6 @@ document.getElementById('hostCopy').addEventListener('click', () => wifiCopy('ho
 document.getElementById('joinCopy').addEventListener('click', () => wifiCopy('joinReply'));
 document.getElementById('wifiClose').addEventListener('click', () => { wifiClose(); });
 
-// 4세계: 서로 다른 공격 메커니즘을 갖는 전용 직업들
-function addW4(id,base,o){const b=CLASS_DEFS[base];CLASS_DEFS[id]={id,base,world:4,icon:o.icon,name:o.name,price:o.price,tier:o.tier,hat:o.hat,slash:o.slash,desc:o.desc,fireDesc:o.fireDesc,statsOverride:Object.assign({},b.statsOverride,o.stats||{})};}
-addW4('w4_scout','ranged',{icon:'🔥',name:'잿빛 사수',price:0,tier:'common',desc:'빠른 연사로 적을 밀어붙이는 기본 사수.',fireDesc:'빠른 화산탄 연사',stats:{damage:20,fireDelay:150,magazine:30}});
-addW4('w4_guard','melee',{icon:'🪓',name:'용암 벌목꾼',price:300,tier:'common',slash:'#ff7b35',desc:'도끼로 넓은 범위를 휘두르는 근접 전사.',fireDesc:'넓은 도끼 베기',stats:{damage:37,meleeRange:95,meleeArc:1.9,maxHp:155,speed:3.4}});
-addW4('w4_bomber','bomber',{icon:'💣',name:'마그마 폭탄병',price:500,tier:'rare',desc:'폭발 범위가 넓은 마그마 폭탄을 던진다.',fireDesc:'광역 마그마 폭탄',stats:{damage:25,blastRadius:125,magazine:4,fireDelay:650}});
-addW4('w4_sniper','sniper',{icon:'🎯',name:'흑요석 저격수',price:600,tier:'rare',desc:'관통력이 뛰어난 흑요석 탄환으로 일렬의 적을 공격한다.',fireDesc:'초강력 관통 저격',stats:{damage:105,pierce:7,fireDelay:850,magazine:4}});
-addW4('w4_medic','witch',{icon:'🧪',name:'불사조 치유사',price:850,tier:'hero',desc:'전투 중 주기적으로 체력을 회복하며 버틴다.',fireDesc:'치유 물약과 원거리 공격',stats:{brewInterval:220,maxHp:125,damage:19}});
-addW4('w4_mage','pyromancer',{icon:'🧙',name:'화염술사',price:1000,tier:'hero',desc:'탄약 없이 불꽃 마법을 퍼붓는 마법사.',fireDesc:'무탄약 화염 마법',stats:{damage:36,fireDelay:310,speed:3.6}});
-addW4('w4_engineer','engineer',{icon:'🔧',name:'용광로 기술자',price:1450,tier:'mythic',desc:'자동 포탑을 활용해 전장을 지배한다.',fireDesc:'포탑 설치와 지원 사격',stats:{damage:27,maxHp:145,armor:0.12}});
-addW4('w4_assassin','assassin',{icon:'🗡️',name:'불꽃 암살자',price:1600,tier:'mythic',slash:'#ffad4d',desc:'빠르게 접근해 강한 근접 공격을 가한다.',fireDesc:'초고속 암살 베기',stats:{damage:75,speed:5.6,maxHp:85}});
-addW4('w4_dragon','dragonlord',{icon:'🐉',name:'화산 용기사',price:2800,tier:'legend',slash:'#ff5722',desc:'강력한 근접 공격과 높은 체력을 갖춘 용기사.',fireDesc:'용의 검격',stats:{damage:100,maxHp:230,armor:0.24}});
-addW4('w4_king','iceking',{icon:'👑',name:'마그마 제왕',price:4800,tier:'god',desc:'세 갈래의 강력한 투사체로 적을 제압한다.',fireDesc:'삼중 마그마 창',stats:{damage:92,maxHp:260,magazine:12,fireDelay:350}});
-
-// 4세계 직업 확장: 여섯 등급만 유지 (일반/희귀/영웅/전설/신화/GOD)
-addW4('w4_spear','sniper',{icon:'🏹',name:'용암 창잡이',price:650,tier:'rare',desc:'관통하는 창을 멀리 날리는 사수.',fireDesc:'원거리 관통 창',stats:{damage:80,pierce:5,fireDelay:560}});
-addW4('w4_shield','knight',{icon:'🛡️',name:'현무암 방패병',price:720,tier:'rare',desc:'높은 방어력과 방패 방어로 버티는 기사.',fireDesc:'검격과 연속 터치 방패',stats:{maxHp:200,armor:.34,damage:32}});
-addW4('w4_alchemist','scientist',{icon:'⚗️',name:'화산 연금술사',price:850,tier:'rare',desc:'산성·맹독·냉기·전격 물약을 무작위로 던진다.',fireDesc:'무작위 원소 물약',stats:{damage:28,magazine:8}});
-addW4('w4_beast','summoner',{icon:'🐺',name:'잿불 조련사',price:1100,tier:'hero',desc:'소환수를 키워 함께 전투한다.',fireDesc:'소환수 지원과 공격',stats:{damage:28,maxHp:140}});
-addW4('w4_necro','necromancer',{icon:'💀',name:'재의 강령술사',price:1250,tier:'hero',desc:'쓰러진 적을 이용해 전장을 장악한다.',fireDesc:'강령술 공격',stats:{damage:33,maxHp:125}});
-addW4('w4_tank','juggernaut',{icon:'🗿',name:'화산 거인',price:1400,tier:'hero',desc:'느리지만 튼튼하고 강력한 근접 공격.',fireDesc:'묵직한 근접 강타',stats:{maxHp:280,armor:.28,speed:2.6,damage:65}});
-addW4('w4_storm','frostmage',{icon:'🌪️',name:'화산 폭풍술사',price:1850,tier:'mythic',desc:'광역 마법으로 적의 움직임을 방해한다.',fireDesc:'광역 원소 마법',stats:{damage:42,fireDelay:260}});
-addW4('w4_machine','machinelord',{icon:'🤖',name:'마그마 기계왕',price:2200,tier:'mythic',desc:'기계 장비를 이용해 지속적으로 공격한다.',fireDesc:'기계식 연속 공격',stats:{damage:45,armor:.18}});
-addW4('w4_reaper','reaper',{icon:'☠️',name:'흑염 사신',price:3200,tier:'legend',desc:'사신의 강력한 공격으로 적을 처치한다.',fireDesc:'사신의 일격',stats:{damage:110,speed:4.3}});
-addW4('w4_empress','empress',{icon:'👸',name:'불꽃 여제',price:3700,tier:'legend',desc:'높은 공격력과 특별한 전투 능력을 가진 여제.',fireDesc:'여제의 원소 공격',stats:{damage:85,maxHp:190}});
-addW4('w4_demon','archdemon',{icon:'😈',name:'화산 마왕',price:5900,tier:'god',desc:'최상위 근접 공격력과 생존력을 가진 마왕.',fireDesc:'마왕의 파괴 공격',stats:{damage:150,maxHp:300,armor:.2}});
 const WORLD_INFO = {
   1: { title:'좀비 서바이벌', color:'', shadow:'', sub:'World 1 · Zombie Survival', def:'ranged',
        tag:'몰려오는 좀비를 막아내고, 웨이브마다 강화를 골라 성장하세요.<br>세 번째 웨이브마다 서로 다른 보스가 순서대로 찾아옵니다.',
@@ -5133,8 +5101,7 @@ const WORLD_INFO = {
        bg:'radial-gradient(ellipse at center, #2e1a3a 0%, #0d0614 100%)' },
   3: { title:'얼음왕국', color:'#9fe8ff', shadow:'0 0 28px rgba(110,210,255,0.6), 0 0 6px #000, 3px 3px 0 #06182a', sub:'World 3 · Ice Kingdom', def:'w3_trapper',
        tag:'눈사람 좀비와 얼음 정령, 예티가 몰려오는 꽁꽁 언 왕국.<br>세 번째 웨이브마다 얼음왕국의 보스가 찾아옵니다.',
-       bg:'radial-gradient(ellipse at center, #1b3550 0%, #060c14 100%)' },
-  4:{title:'볼케이노 마을',color:'#ff9b4b',shadow:'0 0 28px rgba(255,90,20,.65)',sub:'World 4 · Volcano Village',def:'w4_scout',tag:'🌋 용암과 불꽃 속에서 좀비들을 물리치세요!',bg:'radial-gradient(ellipse at center,#542017 0%,#170805 100%)'}
+       bg:'radial-gradient(ellipse at center, #1b3550 0%, #060c14 100%)' }
 };
 const lastClassOfWorld = {};
 function setWorld(n) {
@@ -5152,7 +5119,6 @@ function setWorld(n) {
   });
   // 세계마다 쓰는 직업이 다르다 — 그 세계에서 마지막으로 쓴 직업(없으면 기본 직업)으로 전환
   if ((CLASS_DEFS[playerClass].world||1) === prevWorld) lastClassOfWorld[prevWorld] = playerClass;
-  if (CLASS_DEFS[info.def] && CLASS_DEFS[info.def].price === 0) unlockedClasses[info.def] = true;
   const want = lastClassOfWorld[n] || info.def;
   playerClass = (unlockedClasses[want] ? want : info.def);
   behav = baseOf(playerClass);

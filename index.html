@@ -1772,6 +1772,8 @@ function refresh(){const show=state==='playing'&&!gameOver;layer.classList.toggl
 initGame();
   dungeonInit();
   state = 'playing';
+  document.getElementById('adventureMap').classList.add('hidden');
+  document.getElementById('adventureWin').classList.add('hidden');
   mouse.down = false;
   fireLocked = pointerDown;
   document.getElementById('startScreen').classList.add('hidden');
@@ -4023,7 +4025,7 @@ function drawHalloweenAccessory(hat, r) {
 }
 
 function drawPlayer() {
-  if(adventureMode && gameMode==='survival'){
+  if(adventureMode && gameMode==='survival' && player){
     ctx.save();ctx.translate(player.x,player.y);
     ctx.shadowColor='#5fe0ff';ctx.shadowBlur=19;
     const orb=ctx.createRadialGradient(-player.r*.35,-player.r*.45,1,0,0,player.r*1.2);
@@ -4711,6 +4713,7 @@ function adventureOpenMap(n) {
   document.getElementById('hud').classList.add('hidden');
   state='menu';
   gameOver=true;
+  world=n;
   document.getElementById('advTitle').textContent=n+'세계 · '+adventureNames[n];
   const trail=document.getElementById('stageTrail');
   trail.innerHTML='';
@@ -4731,7 +4734,6 @@ function adventureChooseStage(n,i){
   adventureMode=true;
   document.getElementById('adventureMap').classList.add('hidden');
   enterWorld(n,'survival');
-  document.getElementById('startSub').textContent='모험 '+n+'-'+i+' · 직업을 선택하고 시작하세요';
   document.getElementById('startTitle').textContent=n+'세계 · '+adventureNames[n];
   document.getElementById('startSub').textContent=n+'-'+i+' · 직업 선택 후 모험 시작';
   document.getElementById('startBtn').textContent='▶ '+n+'-'+i+' 시작';
@@ -4741,8 +4743,7 @@ function adventureChooseStage(n,i){
 let dungeon=null;
 function dungeonInit(){
   if(!adventureMode||gameMode!=='survival'){dungeon=null;return;}
-  const W=canvas.width,H=canvas.height;
-  const pad=65;
+  const W=Math.max(400,canvas.width),H=Math.max(300,canvas.height);
   dungeon={
     key:{x:W*.22,y:H*.25,taken:false},
     chest:{x:W*.76,y:H*.73,opened:false},
@@ -4755,7 +4756,7 @@ function dungeonInit(){
     ],
     ready:false,finished:false,notice:'🔑 열쇠를 찾고 스위치를 밟으세요!'
   };
-  player.x=W*.48;player.y=H*.82;
+  player.x=Math.min(canvas.width-35,Math.max(35,canvas.width*.48));player.y=Math.min(canvas.height-35,Math.max(35,canvas.height*.78));
   player.r=Math.max(18,player.r);
   dungeon.notice='🧟 좀비와 보스를 물리치고 열쇠를 찾으세요!';
 }

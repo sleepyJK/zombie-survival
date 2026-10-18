@@ -5095,7 +5095,19 @@ document.getElementById('hostCopy').addEventListener('click', () => wifiCopy('ho
 document.getElementById('joinCopy').addEventListener('click', () => wifiCopy('joinReply'));
 document.getElementById('wifiClose').addEventListener('click', () => { wifiClose(); });
 
-CLASS_DEFS.w4_scout = {...CLASS_DEFS.ranged, id:'w4_scout', icon:'🔥', name:'화산 사수', world:4, base:'ranged', tier:'common', price:0, desc:'화산의 불길 속에서 싸우는 생존 사수', statsOverride:{damage:23}};
+// 4세계: 서로 다른 공격 메커니즘을 갖는 전용 직업들
+function addW4(id,base,o){const b=CLASS_DEFS[base];CLASS_DEFS[id]={id,base,world:4,icon:o.icon,name:o.name,price:o.price,tier:o.tier,hat:o.hat,slash:o.slash,desc:o.desc,fireDesc:o.fireDesc,statsOverride:Object.assign({},b.statsOverride,o.stats||{})};}
+addW4('w4_scout','ranged',{icon:'🔥',name:'잿빛 사수',price:0,tier:'common',desc:'빠른 연사로 적을 밀어붙이는 기본 사수.',fireDesc:'빠른 화산탄 연사',stats:{damage:20,fireDelay:150,magazine:30}});
+addW4('w4_guard','melee',{icon:'🪓',name:'용암 벌목꾼',price:300,tier:'common',slash:'#ff7b35',desc:'도끼로 넓은 범위를 휘두르는 근접 전사.',fireDesc:'넓은 도끼 베기',stats:{damage:37,meleeRange:95,meleeArc:1.9,maxHp:155,speed:3.4}});
+addW4('w4_bomber','bomber',{icon:'💣',name:'마그마 폭탄병',price:500,tier:'rare',desc:'폭발 범위가 넓은 마그마 폭탄을 던진다.',fireDesc:'광역 마그마 폭탄',stats:{damage:25,blastRadius:125,magazine:4,fireDelay:650}});
+addW4('w4_sniper','sniper',{icon:'🎯',name:'흑요석 저격수',price:600,tier:'rare',desc:'관통력이 뛰어난 흑요석 탄환으로 일렬의 적을 공격한다.',fireDesc:'초강력 관통 저격',stats:{damage:105,pierce:7,fireDelay:850,magazine:4}});
+addW4('w4_medic','witch',{icon:'🧪',name:'불사조 치유사',price:850,tier:'hero',desc:'전투 중 주기적으로 체력을 회복하며 버틴다.',fireDesc:'치유 물약과 원거리 공격',stats:{brewInterval:220,maxHp:125,damage:19}});
+addW4('w4_mage','pyromancer',{icon:'🧙',name:'화염술사',price:1000,tier:'hero',desc:'탄약 없이 불꽃 마법을 퍼붓는 마법사.',fireDesc:'무탄약 화염 마법',stats:{damage:36,fireDelay:310,speed:3.6}});
+addW4('w4_engineer','engineer',{icon:'🔧',name:'용광로 기술자',price:1450,tier:'mythic',desc:'자동 포탑을 활용해 전장을 지배한다.',fireDesc:'포탑 설치와 지원 사격',stats:{damage:27,maxHp:145,armor:0.12}});
+addW4('w4_assassin','assassin',{icon:'🗡️',name:'불꽃 암살자',price:1600,tier:'mythic',slash:'#ffad4d',desc:'빠르게 접근해 강한 근접 공격을 가한다.',fireDesc:'초고속 암살 베기',stats:{damage:75,speed:5.6,maxHp:85}});
+addW4('w4_dragon','dragonlord',{icon:'🐉',name:'화산 용기사',price:2800,tier:'legend',slash:'#ff5722',desc:'강력한 근접 공격과 높은 체력을 갖춘 용기사.',fireDesc:'용의 검격',stats:{damage:100,maxHp:230,armor:0.24}});
+addW4('w4_king','iceking',{icon:'👑',name:'마그마 제왕',price:4800,tier:'god',desc:'세 갈래의 강력한 투사체로 적을 제압한다.',fireDesc:'삼중 마그마 창',stats:{damage:92,maxHp:260,magazine:12,fireDelay:350}});
+
 const WORLD_INFO = {
   1: { title:'좀비 서바이벌', color:'', shadow:'', sub:'World 1 · Zombie Survival', def:'ranged',
        tag:'몰려오는 좀비를 막아내고, 웨이브마다 강화를 골라 성장하세요.<br>세 번째 웨이브마다 서로 다른 보스가 순서대로 찾아옵니다.',

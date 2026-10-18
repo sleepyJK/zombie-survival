@@ -1772,6 +1772,7 @@ function refresh(){const show=state==='playing'&&!gameOver;layer.classList.toggl
 initGame();
   dungeonInit();
   state = 'playing';
+  try { draw(); } catch(e) { console.error('Initial stage render:',e); }
   document.getElementById('adventureMap').classList.add('hidden');
   document.getElementById('adventureWin').classList.add('hidden');
   mouse.down = false;
@@ -4504,11 +4505,29 @@ function draw() {
 }
 
 function loop() {
-  if (wifi.role === 'guest' && wifi.playing) { guestTick(); draw(); requestAnimationFrame(loop); return; }
-  update();
-  if (wifi.hosting && wifi.open && state !== 'menu') { wifi.frame++; if (wifi.frame % 2 === 0) wifiSendSnap(); }
-  draw();
-  requestAnimationFrame(loop);
+  // 한 프레임의 오류 때문에 아이패드에서 화면 전체가 멈추지 않도록 한다.
+  try {
+    if (wifi.role === 'guest' && wifi.playing) { guestTick(); draw(); return; }
+    try { update(); } catch(e) {
+      if (!loop.lastUpdateError || loop.lastUpdateError !== String(e)) { console.error('Game update:',e); loop.lastUpdateError=String(e); }
+    }
+    if (wifi.hosting && wifi.open && state !== 'menu') { wifi.frame++; if (wifi.frame % 2 === 0) wifiSendSnap(); }
+    draw();
+  } catch(e) {
+    if (!loop.lastDrawError || loop.lastDrawError !== String(e)) { console.error('Game render:',e); loop.lastDrawError=String(e); }
+    // 기본 모험 배경과 구슬 캐릭터는 다른 렌더러에 오류가 나도 표시한다.
+    if (adventureMode && state==='playing' && player) {
+      try {
+        ctx.save();
+        ctx.fillStyle=world===1?'#27363c':world===2?'#33223c':world===3?'#163e60':'#49271d';
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+        if(dungeon) dungeonDraw();
+        ctx.shadowColor='#67dfff';ctx.shadowBlur=20;ctx.fillStyle='#b5efff';
+        ctx.beginPath();ctx.arc(player.x,player.y,Math.max(18,player.r),0,Math.PI*2);ctx.fill();
+        ctx.restore();
+      } catch(fallbackError) { console.error('Fallback render:',fallbackError); }
+    }
+  } finally { requestAnimationFrame(loop); }
 }
 
 const halloweenDecor = [];

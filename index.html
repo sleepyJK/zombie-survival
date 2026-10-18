@@ -807,6 +807,7 @@ var wifi = { role:null, pc:null, dc:null, open:false, kind:null, playing:false, 
              remoteIn:{ up:false, down:false, left:false, right:false, mx:0, my:0, d:false }, snap:null };
 
 const keys = {};
+const stageMove={x:0,y:0};
 window.addEventListener('keydown', e => {
   const k = (e.key || '').toLowerCase();
   keys[k] = true;
@@ -1767,8 +1768,8 @@ function startGame() {
 (function initTouchControls(){
 if(window.__touchSticksReady)return;window.__touchSticksReady=true;
 const layer=document.getElementById('touchControls');
-function stick(el,kind){let pid=null;const knob=el.querySelector('.touchKnob');function reset(){pid=null;knob.style.transform='translate(0px,0px)';if(kind==='move'){['w','a','s','d'].forEach(k=>keys[k]=false);}else mouse.down=false;}
-function drag(e){if(e.pointerId!==pid)return;e.preventDefault();const r=el.getBoundingClientRect();let x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2);const d=Math.hypot(x,y);if(d>42){x=x/d*42;y=y/d*42;}knob.style.transform='translate('+x+'px,'+y+'px)';if(kind==='move'){keys.a=x < -12;keys.d=x > 12;keys.w=y < -12;keys.s=y > 12;}else if(Math.hypot(x,y)>8&&player){const a=Math.atan2(y,x);mouse.x=player.x+Math.cos(a)*250;mouse.y=player.y+Math.sin(a)*250;mouse.down=true;}else mouse.down=false;}
+function stick(el,kind){let pid=null;const knob=el.querySelector('.touchKnob');function reset(){pid=null;knob.style.transform='translate(0px,0px)';if(kind==='move'){stageMove.x=0;stageMove.y=0;['w','a','s','d'].forEach(k=>keys[k]=false);}else mouse.down=false;}
+function drag(e){if(e.pointerId!==pid)return;e.preventDefault();const r=el.getBoundingClientRect();let x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2);const d=Math.hypot(x,y);if(d>42){x=x/d*42;y=y/d*42;}knob.style.transform='translate('+x+'px,'+y+'px)';if(kind==='move'){stageMove.x=x/42;stageMove.y=y/42;keys.a=x < -12;keys.d=x > 12;keys.w=y < -12;keys.s=y > 12;}else if(Math.hypot(x,y)>8&&player){const a=Math.atan2(y,x);mouse.x=player.x+Math.cos(a)*250;mouse.y=player.y+Math.sin(a)*250;mouse.down=true;}else mouse.down=false;}
 el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();pid=e.pointerId;try{el.setPointerCapture(pid);}catch(_){}drag(e);});el.addEventListener('pointermove',drag);['pointerup','pointercancel','lostpointercapture'].forEach(t=>el.addEventListener(t,reset));}
 stick(document.getElementById('touchMove'),'move');stick(document.getElementById('touchAim'),'aim');document.getElementById('touchReload').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(state==='playing')reload();});
 function refresh(){const show=state==='playing'&&!gameOver;layer.classList.toggle('active',show);if(!show){mouse.down=false;['w','a','s','d'].forEach(k=>keys[k]=false);}requestAnimationFrame(refresh);}refresh();
@@ -3022,6 +3023,7 @@ function update() {
   if (keys['s']||keys['arrowdown']) dy += 1;
   if (keys['a']||keys['arrowleft']) dx -= 1;
   if (keys['d']||keys['arrowright']) dx += 1;
+  if(adventureMode && (stageMove.x||stageMove.y)){dx=stageMove.x;dy=stageMove.y;}
   const len = Math.hypot(dx,dy);
   if (len > 0) {
     player.x += dx/len * player.speed;
@@ -5598,7 +5600,7 @@ function stage3DFrame(){
      const colors={1:[0x35444d,0x182331],2:[0x4c315e,0x281a3c],3:[0x7bb4d3,0x183e61],4:[0x704034,0x421e19]};
      const c=colors[world]||colors[1];a.floor.material.color.setHex(c[0]);scene.background.setHex(c[1]);
    }
-   for(const obj of a.entities)scene.remove(obj);
+   for(const obj of a.entities){scene.remove(obj);obj.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose();});}
    a.entities.length=0;
    const scale=26,px=player?player.x:W/2,py=player?player.y:H/2;
    const toX=x=>(x-W/2)/scale,toZ=y=>(y-H/2)/scale;

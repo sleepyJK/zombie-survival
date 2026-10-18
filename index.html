@@ -568,7 +568,7 @@
   #upHint { font-size: 12px; color: #777; letter-spacing: 1px; }
 
 #touchControls{position:fixed;inset:0;pointer-events:none;z-index:80;display:none;touch-action:none}#touchControls.active{display:block}.touchStick{position:absolute;bottom:24px;width:124px;height:124px;border:2px solid #ffffff77;border-radius:50%;background:#1b30468c;pointer-events:auto;touch-action:none;user-select:none}.touchStick.left{left:clamp(48px,8vw,110px)}.touchStick.right{right:clamp(48px,8vw,110px);background:#60302e8c}.touchKnob{position:absolute;width:48px;height:48px;left:38px;top:38px;border-radius:50%;background:#a2d9ffb8}.right .touchKnob{background:#ffad8db8}#touchReload{position:absolute;right:clamp(70px,10vw,130px);bottom:163px;padding:13px 17px;border-radius:15px;background:#283a4de8;color:white;border:1px solid #ffffff88;font-size:16px;pointer-events:auto}@media (pointer:coarse){html,body,#gameCanvas{touch-action:none}}
-</style>
+.worldCard.w4{border-color:#ff783f;box-shadow:0 0 18px rgba(255,90,25,.45)}.worldBtn.w4.active{border-color:#ff783f;color:#ffae73}</style>
 </head>
 <body>
 <canvas id="gameCanvas"></canvas><div id="touchControls"><div class="touchStick left" id="touchMove"><div class="touchKnob"></div></div><div class="touchStick right" id="touchAim"><div class="touchKnob"></div></div><button id="touchReload" type="button">↻ 재장전</button></div>
@@ -632,7 +632,7 @@
     <button class="worldCard w1" data-world="1"><canvas width="320" height="200"></canvas><div class="wLabel" style="color:#5fe07a">1세계 · 좀비 도시</div></button>
     <button class="worldCard w2" data-world="2"><canvas width="320" height="200"></canvas><div class="wLabel" style="color:#ffb347">2세계 · 할로윈</div></button>
     <button class="worldCard w3" data-world="3"><canvas width="320" height="200"></canvas><div class="wLabel" style="color:#9fe8ff">3세계 · 얼음왕국</div></button>
-    <button class="worldCard locked" data-lock="4세계"><div class="wLabel">4세계</div><div class="lockIcon">🔒<span>잠금</span></div></button>
+    <button class="worldCard w4" data-world="4"><canvas width="320" height="200"></canvas><div class="wLabel" style="color:#ff9b4b">🌋 4세계 · 볼케이노 마을</div></button>
     <button class="worldCard locked" data-lock="5세계"><div class="wLabel">5세계</div><div class="lockIcon">🔒<span>잠금</span></div></button>
     <button class="worldCard locked" data-lock="6세계"><div class="wLabel">6세계</div><div class="lockIcon">🔒<span>잠금</span></div></button>
   </div>
@@ -715,7 +715,7 @@
   <div id="worldRow">
     <button class="worldBtn w1" data-world="1">🏙️ 1세계 · 좀비 도시</button>
     <button class="worldBtn w2" data-world="2">🎃 2세계 · 할로윈 나이트</button>
-    <button class="worldBtn w3" data-world="3">❄️ 3세계 · 얼음왕국</button>
+    <button class="worldBtn w3" data-world="3">❄️ 3세계 · 얼음왕국</button><button class="worldBtn w4" data-world="4">🌋 4세계 · 볼케이노 마을</button>
   </div>
 
   <p id="startScoreInfo" class="hidden">최근 점수: 0 · 최고 점수: 0</p>
@@ -4311,6 +4311,7 @@ function drawHalloweenDecor() {
 }
 
 function drawGrid() {
+  if (world === 4) {ctx.save();for(let i=0;i<24;i++){const x=((i*191+37)%Math.max(1,canvas.width)),y=((i*137+79)%Math.max(1,canvas.height));ctx.fillStyle=i%3===0?'#ff8d30':'#792b18';ctx.beginPath();ctx.ellipse(x,y,16+i%5*6,5+i%4*3,i*.3,0,Math.PI*2);ctx.fill();}ctx.restore();}
   if (world === 2) drawHalloweenDecor();
   else if (world === 3) drawWinterDecor();
   ctx.strokeStyle = world === 3 ? 'rgba(150,220,255,0.06)' : (world === 2 ? 'rgba(255,150,60,0.05)' : 'rgba(255,255,255,0.03)');
@@ -4605,6 +4606,8 @@ function endPvp(win) {
    로비(허브) — 세계 선택 · PvP · 파티
    ══════════════════════════════════════════ */
 function drawWorldPreview(cv, n) {
+  if(n===4){const g=cv.getContext('2d'),W=cv.width,H=cv.height;g.fillStyle='#27100c';g.fillRect(0,0,W,H);g.fillStyle='#713023';for(let i=0;i<9;i++){g.fillRect(i*45,100+(i%3)*14,35,65);}g.fillStyle='#ff7c22';g.beginPath();g.moveTo(0,185);g.lineTo(80,130);g.lineTo(160,175);g.lineTo(260,105);g.lineTo(W,140);g.lineTo(W,H);g.lineTo(0,H);g.fill();g.fillStyle='#ffcb55';for(let i=0;i<14;i++)g.fillRect((i*71)%W,(i*43)%H,4,8);return;}
+
   const g = cv.getContext('2d'), W = cv.width, H = cv.height;
   if (n === 1) {
     const gr = g.createRadialGradient(W/2,H/2,10,W/2,H/2,W*0.7); gr.addColorStop(0,'#2a4a2a'); gr.addColorStop(1,'#0c140c');
@@ -5092,6 +5095,7 @@ document.getElementById('hostCopy').addEventListener('click', () => wifiCopy('ho
 document.getElementById('joinCopy').addEventListener('click', () => wifiCopy('joinReply'));
 document.getElementById('wifiClose').addEventListener('click', () => { wifiClose(); });
 
+CLASS_DEFS.w4_scout = {...CLASS_DEFS.ranged, id:'w4_scout', icon:'🔥', name:'화산 사수', world:4, base:'ranged', tier:'common', price:0, desc:'화산의 불길 속에서 싸우는 생존 사수', statsOverride:{damage:23}};
 const WORLD_INFO = {
   1: { title:'좀비 서바이벌', color:'', shadow:'', sub:'World 1 · Zombie Survival', def:'ranged',
        tag:'몰려오는 좀비를 막아내고, 웨이브마다 강화를 골라 성장하세요.<br>세 번째 웨이브마다 서로 다른 보스가 순서대로 찾아옵니다.',
@@ -5101,7 +5105,8 @@ const WORLD_INFO = {
        bg:'radial-gradient(ellipse at center, #2e1a3a 0%, #0d0614 100%)' },
   3: { title:'얼음왕국', color:'#9fe8ff', shadow:'0 0 28px rgba(110,210,255,0.6), 0 0 6px #000, 3px 3px 0 #06182a', sub:'World 3 · Ice Kingdom', def:'w3_trapper',
        tag:'눈사람 좀비와 얼음 정령, 예티가 몰려오는 꽁꽁 언 왕국.<br>세 번째 웨이브마다 얼음왕국의 보스가 찾아옵니다.',
-       bg:'radial-gradient(ellipse at center, #1b3550 0%, #060c14 100%)' }
+       bg:'radial-gradient(ellipse at center, #1b3550 0%, #060c14 100%)' },
+  4:{title:'볼케이노 마을',color:'#ff9b4b',shadow:'0 0 28px rgba(255,90,20,.65)',sub:'World 4 · Volcano Village',def:'w4_scout',tag:'🌋 용암과 불꽃 속에서 좀비들을 물리치세요!',bg:'radial-gradient(ellipse at center,#542017 0%,#170805 100%)'}
 };
 const lastClassOfWorld = {};
 function setWorld(n) {

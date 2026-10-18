@@ -594,7 +594,7 @@
 #hud,#waveBanner,#bossBar,#controlsPanel{z-index:6}
 #startScreen,#hubScreen,#adventureMap,#adventureWin,#modePick{z-index:40}
 #startScreen #worldRow{display:none!important} #startScreen #classPanel{display:block!important} #stage3D{position:fixed;inset:0;z-index:32;pointer-events:none;display:none} #stage3D canvas{display:block;width:100%;height:100%} #stageOrb{position:fixed;z-index:35;display:none;width:44px;height:44px;border:3px solid white;border-radius:50%;box-sizing:border-box;pointer-events:none;transform:translate(-50%,-50%);background:radial-gradient(circle at 30% 25%,white,#a3e9ff 40%,#367ac7 100%);box-shadow:0 0 20px #6bdfff} #stageOrb:after{content:'••';position:absolute;top:7px;left:11px;color:#16446a;letter-spacing:3px}</style>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script></head>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var t=document.createElement('script');t.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(t)"></script></head>
 <body>
 <canvas id="gameCanvas"></canvas><canvas id="adventureCanvas" aria-hidden="true"></canvas><div id="stageOrb"></div><div id="stage3D" aria-label="3D 모험 게임"></div><div id="touchControls"><div class="touchStick left" id="touchMove"><div class="touchKnob"></div></div><div class="touchStick right" id="touchAim"><div class="touchKnob"></div></div><button id="touchReload" type="button">↻ 재장전</button></div>
 <div id="hud" class="hidden">

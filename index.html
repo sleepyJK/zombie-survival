@@ -588,10 +588,15 @@
 #adventureWin h2{color:#ffd976;font-size:30px}
 #adventureWin .winActions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 @media(max-width:540px){#stageTrail{gap:6px;padding:4px}.stageNode{min-height:75px;font-size:16px;border-radius:10px}.stageNode small{font-size:10px}}
+
+/* Separate adventure renderer: keeps the game visible even if legacy canvas fails. */
+#adventureCanvas{position:fixed;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;display:none}
+#hud,#waveBanner,#bossBar,#controlsPanel{z-index:6}
+#startScreen,#hubScreen,#adventureMap,#adventureWin,#modePick{z-index:40}
 </style>
 </head>
 <body>
-<canvas id="gameCanvas"></canvas><div id="touchControls"><div class="touchStick left" id="touchMove"><div class="touchKnob"></div></div><div class="touchStick right" id="touchAim"><div class="touchKnob"></div></div><button id="touchReload" type="button">↻ 재장전</button></div>
+<canvas id="gameCanvas"></canvas><canvas id="adventureCanvas" aria-hidden="true"></canvas><div id="touchControls"><div class="touchStick left" id="touchMove"><div class="touchKnob"></div></div><div class="touchStick right" id="touchAim"><div class="touchKnob"></div></div><button id="touchReload" type="button">↻ 재장전</button></div>
 <div id="hud" class="hidden">
   <div>❤️ 체력</div>
   <div class="bar-bg"><div id="hpBar" class="bar-fill"></div></div>
@@ -5455,6 +5460,68 @@ function setWorld(n) {
 document.querySelectorAll('.worldBtn').forEach(b => {
   b.addEventListener('click', (e) => { e.stopPropagation(); setWorld(Number(b.dataset.world)); });
 });
+
+
+/* Independent canvas for the four adventure worlds. Runs independently of legacy draw(). */
+const adventureCanvas=document.getElementById('adventureCanvas');
+const adventureCtx=adventureCanvas.getContext('2d');
+let adventureRenderError='';
+function adventureRenderLoop(){
+  requestAnimationFrame(adventureRenderLoop);
+  const visible=adventureMode && gameMode==='survival' && state==='playing' && !gameOver;
+  adventureCanvas.style.display=visible?'block':'none';
+  if(!visible)return;
+  try {
+    const W=window.innerWidth,H=window.innerHeight;
+    if(adventureCanvas.width!==W||adventureCanvas.height!==H){adventureCanvas.width=W;adventureCanvas.height=H;}
+    const g=adventureCtx,colors={1:['#17282f','#46575d','#d3a968'],2:['#24182e','#62426e','#f7a347'],3:['#102d46','#5791b5','#c1f4ff'],4:['#361b1a','#a44a27','#ff9b4a']};
+    const [floor,wall,accent]=colors[world]||colors[1];
+    g.fillStyle=floor;g.fillRect(0,0,W,H);
+    g.strokeStyle=accent+'24';g.lineWidth=1;
+    for(let x=0;x<W;x+=58){g.beginPath();g.moveTo(x,0);g.lineTo(x,H);g.stroke();}
+    for(let y=0;y<H;y+=58){g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke();}
+    g.fillStyle=wall;g.fillRect(0,0,W,17);g.fillRect(0,H-17,W,17);g.fillRect(0,0,17,H);g.fillRect(W-17,0,17,H);
+    const d=dungeon;
+    if(d){
+      for(const b of d.blocks){g.fillStyle='#080f1c99';g.fillRect(b.x+7,b.y+7,b.w,b.h);g.fillStyle=wall;g.fillRect(b.x,b.y,b.w,b.h);g.fillStyle=accent;g.fillRect(b.x,b.y,b.w,6);}
+      g.textAlign='center';g.font='32px sans-serif';
+      const scenery={1:['🏚️','🚧','🚗'],2:['🎃','🪦','🦇'],3:['❄️','🌲','🧊'],4:['🌋','🔥','🪨']}[world]||['🏚️'];
+      [[.13,.22],[.86,.35],[.13,.62],[.86,.84],[.46,.13]].forEach((p,i)=>g.fillText(scenery[i%scenery.length],W*p[0],H*p[1]));
+      if(!d.key.taken)g.fillText('🔑',d.key.x,d.key.y+10);
+      if(!d.chest.opened)g.fillText('🎁',d.chest.x,d.chest.y+10);
+      g.fillText(d.switch.pressed?'🟩':'🔘',d.switch.x,d.switch.y+10);
+      g.fillText(d.ready&&d.key.taken&&d.switch.pressed?'🌀':'🔒',d.gate.x,d.gate.y+10);
+    }
+    // Zombies and bosses are visible regardless of legacy draw errors.
+    for(const z of zombies){
+      if(!Number.isFinite(z.x)||!Number.isFinite(z.y))continue;
+      g.save();g.shadowColor=z.isBoss?'#ff5c50':'#83df69';g.shadowBlur=z.isBoss?24:8;
+      g.fillStyle=z.isBoss?'#ad3446':(z.color||'#75aa63');
+      g.beginPath();g.arc(z.x,z.y,Math.max(12,z.r||15),0,Math.PI*2);g.fill();
+      g.shadowBlur=0;g.font=(z.isBoss?'31':'19')+'px sans-serif';g.textAlign='center';g.fillText(z.isBoss?'👹':'🧟',z.x,z.y+7);
+      g.restore();
+    }
+    for(const b of bullets){g.fillStyle='#ffe56b';g.beginPath();g.arc(b.x,b.y,Math.max(3,b.r||4),0,Math.PI*2);g.fill();}
+    // Guaranteed visible orb character.
+    const px=player&&Number.isFinite(player.x)?player.x:W*.5;
+    const py=player&&Number.isFinite(player.y)?player.y:H*.7;
+    g.save();g.shadowColor='#83eaff';g.shadowBlur=25;
+    const orb=g.createRadialGradient(px-7,py-9,2,px,py,25);
+    orb.addColorStop(0,'#ffffff');orb.addColorStop(.5,'#9eeeff');orb.addColorStop(1,'#3175bf');
+    g.fillStyle=orb;g.beginPath();g.arc(px,py,22,0,Math.PI*2);g.fill();
+    g.strokeStyle='#ffffff';g.lineWidth=3;g.stroke();g.shadowBlur=0;
+    g.fillStyle='#133955';g.beginPath();g.arc(px-6,py-3,2.6,0,Math.PI*2);g.arc(px+6,py-3,2.6,0,Math.PI*2);g.fill();g.restore();
+    g.fillStyle='#081729dd';g.fillRect(Math.max(0,W/2-205),8,410,58);
+    g.textAlign='center';g.fillStyle='#fff';g.font='bold 18px sans-serif';
+    g.fillText(world+'-'+adventureStage+' '+({1:'좀비 도시',2:'할로윈',3:'얼음왕국',4:'볼케이노 마을'}[world]||'모험'),W/2,31);
+    g.font='13px sans-serif';
+    g.fillText(d?(d.ready?'🔑 열쇠와 스위치를 해결하고 출구로!':'🧟 보스를 물리치고 탈출하세요!'):'모험 시작!',W/2,51);
+  }catch(e){
+    const err=String(e&&e.message||e);
+    if(err!==adventureRenderError){adventureRenderError=err;gameErrorDisplay('독립 모험 화면',e);}
+  }
+}
+requestAnimationFrame(adventureRenderLoop);
 
 initGame();
 initMenuZombies();

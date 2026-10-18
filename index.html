@@ -4814,6 +4814,10 @@ function adventureChooseStage(n,i){
   document.getElementById('startSub').textContent=n+'-'+i+' · 직업 선택 후 모험 시작';
   document.getElementById('startBtn').textContent='▶ '+n+'-'+i+' 시작';
   document.getElementById('worldRow').style.display='none';
+  document.getElementById('classPanel').classList.remove('hidden');
+  selectedTier=(CLASS_DEFS[playerClass]||CLASS_DEFS.ranged).tier;
+  buildClassPanel();
+  if(!document.getElementById('classRow').children.length){selectedTier='common';buildClassPanel();}
   const bossList=activeBosses();
   const boss=bossList[(i-1)%bossList.length];
   let bossInfo=document.getElementById('adventureBossInfo');

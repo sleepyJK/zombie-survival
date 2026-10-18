@@ -1765,11 +1765,11 @@ function startGame() {
   if (wifi.role === 'guest') return;      // 참가자는 호스트가 시작해야 한다
   
 (function initTouchControls(){
-if(!(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches))return;
+if(window.__touchSticksReady)return;window.__touchSticksReady=true;
 const layer=document.getElementById('touchControls');
 function stick(el,kind){let pid=null;const knob=el.querySelector('.touchKnob');function reset(){pid=null;knob.style.transform='translate(0px,0px)';if(kind==='move'){['w','a','s','d'].forEach(k=>keys[k]=false);}else mouse.down=false;}
 function drag(e){if(e.pointerId!==pid)return;e.preventDefault();const r=el.getBoundingClientRect();let x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2);const d=Math.hypot(x,y);if(d>42){x=x/d*42;y=y/d*42;}knob.style.transform='translate('+x+'px,'+y+'px)';if(kind==='move'){keys.a=x < -12;keys.d=x > 12;keys.w=y < -12;keys.s=y > 12;}else if(Math.hypot(x,y)>8&&player){const a=Math.atan2(y,x);mouse.x=player.x+Math.cos(a)*250;mouse.y=player.y+Math.sin(a)*250;mouse.down=true;}else mouse.down=false;}
-el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();pid=e.pointerId;el.setPointerCapture(pid);drag(e);});el.addEventListener('pointermove',drag);['pointerup','pointercancel','lostpointercapture'].forEach(t=>el.addEventListener(t,reset));}
+el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();pid=e.pointerId;try{el.setPointerCapture(pid);}catch(_){}drag(e);});el.addEventListener('pointermove',drag);['pointerup','pointercancel','lostpointercapture'].forEach(t=>el.addEventListener(t,reset));}
 stick(document.getElementById('touchMove'),'move');stick(document.getElementById('touchAim'),'aim');document.getElementById('touchReload').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(state==='playing')reload();});
 function refresh(){const show=state==='playing'&&!gameOver;layer.classList.toggle('active',show);if(!show){mouse.down=false;['w','a','s','d'].forEach(k=>keys[k]=false);}requestAnimationFrame(refresh);}refresh();
 })();
@@ -5581,7 +5581,7 @@ function stage3DFrame(){
  if(!visible){stage3D.style.display='none';return;}
  try{
    if(!stage3DState)stage3DInit();
-   if(!stage3DState)return;
+   if(!stage3DState){stage3D.style.display='none';return;}
    const a=stage3DState,{T,scene,camera,renderer}=a;
    stage3D.style.display='block';
    document.getElementById('stageOrb').style.display='none';
@@ -5629,7 +5629,7 @@ function stage3DFrame(){
      head.position.y=r*2.3;mob.add(head);
      mob.position.set(toX(z.x),0,toZ(z.y));scene.add(mob);a.entities.push(mob);
    }
-   camera.position.set(toX(px),Math.max(19,H/31),toZ(py)+Math.max(22,H/26));
+   camera.position.set(toX(px),Math.max(13,H/42),toZ(py)+Math.max(15,H/39));
    camera.lookAt(toX(px),0,toZ(py)-2);
    renderer.render(scene,camera);
  }catch(e){

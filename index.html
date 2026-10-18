@@ -3011,6 +3011,7 @@ function update() {
   player.x = Math.max(player.r, Math.min(canvas.width - player.r, player.x));
   player.y = Math.max(player.r, Math.min(canvas.height - player.r, player.y));
   player.angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+  dungeonUpdate();
 
   if (mouse.down && !fireLocked && behav !== 'knight') shoot();
 
@@ -3037,7 +3038,7 @@ function update() {
     waveActive = false;
     enemyBullets.length = 0;
     hazards.length = 0;
-    setTimeout(() => { if (state === 'playing' && !gameOver) { if (adventureMode && gameMode === 'survival') adventureClearStage(); else openUpgrade(); } }, 900);
+    setTimeout(() => { if (state === 'playing' && !gameOver) { if (adventureMode && gameMode === 'survival') { if(dungeon){dungeon.ready=true;dungeon.notice='👑 보스 처치! 열쇠와 스위치를 찾고 출구로 가세요!';} } else openUpgrade(); } }, 900);
   }
 
   // 마녀 — 5초마다 치유 물약 제조. 체력이 가득 차 있으면 다친 순간까지 물약을 들고 기다린다.
@@ -4020,6 +4021,15 @@ function drawHalloweenAccessory(hat, r) {
 }
 
 function drawPlayer() {
+  if(adventureMode && gameMode==='survival'){
+    ctx.save();ctx.translate(player.x,player.y);
+    ctx.shadowColor='#5fe0ff';ctx.shadowBlur=19;
+    const orb=ctx.createRadialGradient(-player.r*.35,-player.r*.45,1,0,0,player.r*1.2);
+    orb.addColorStop(0,'#ffffff');orb.addColorStop(.42,'#b9f4ff');orb.addColorStop(1,'#4478bf');
+    ctx.fillStyle=orb;ctx.beginPath();ctx.arc(0,0,player.r,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#e4ffff';ctx.lineWidth=2;ctx.stroke();ctx.shadowBlur=0;
+    ctx.fillStyle='#1c3d60';ctx.beginPath();ctx.arc(-5,-2,2,0,Math.PI*2);ctx.arc(5,-2,2,0,Math.PI*2);ctx.fill();ctx.restore();return;
+  }
   // 부패 오라
   if (stats.aura > 0) {
     const auraR = 70 + stats.aura*35;
@@ -4341,6 +4351,7 @@ function drawHalloweenDecor() {
 }
 
 function drawGrid() {
+  if (adventureMode && gameMode==='survival') return;
   if (world === 4) {ctx.save();for(let i=0;i<24;i++){const x=((i*191+37)%Math.max(1,canvas.width)),y=((i*137+79)%Math.max(1,canvas.height));ctx.fillStyle=i%3===0?'#ff8d30':'#792b18';ctx.beginPath();ctx.ellipse(x,y,16+i%5*6,5+i%4*3,i*.3,0,Math.PI*2);ctx.fill();}ctx.restore();}
   if (world === 2) drawHalloweenDecor();
   else if (world === 3) drawWinterDecor();
@@ -4357,6 +4368,7 @@ function draw() {
   if (shake > 0) ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
 
   drawGrid();
+  if(dungeon && state !== 'menu') dungeonDraw();
 
   if (state === 'menu') { drawMenuScene(); ctx.restore(); return; }
 
@@ -4443,6 +4455,7 @@ function draw() {
   zombies.forEach(drawZombie);
   drawMates();
   drawPlayer();
+  dungeonHud();
 
   // 보스 탄환
   enemyBullets.forEach(e => {
@@ -4683,6 +4696,7 @@ const adventureNames = {1:'🏙️ 좀비 도시',2:'🎃 할로윈 나이트',3
 function adventureOpenMap(n) {
   gameMode='survival';
   adventureMode=true;
+  dungeon=null;
   inHub=false;
   document.getElementById('hubScreen').classList.add('hidden');
   document.getElementById('adventureMap').classList.remove('hidden');
@@ -4715,6 +4729,108 @@ function adventureChooseStage(n,i){
   document.getElementById('startSub').textContent='모험 '+n+'-'+i+' · 직업을 선택하고 시작하세요';
   document.getElementById('startBtn').textContent='▶ '+n+'-'+i+' 시작';
 }
+
+/* Dungeon adventure rooms: keys, switches, chests, obstacles, exit */
+let dungeon=null;
+function dungeonInit(){
+  if(!adventureMode||gameMode!=='survival'){dungeon=null;return;}
+  const W=canvas.width,H=canvas.height;
+  const pad=65;
+  dungeon={
+    key:{x:W*.22,y:H*.25,taken:false},
+    chest:{x:W*.76,y:H*.73,opened:false},
+    switch:{x:W*.23,y:H*.76,pressed:false},
+    gate:{x:W*.83,y:H*.18,r:37},
+    blocks:[
+      {x:W*.37,y:H*.22,w:46,h:90},
+      {x:W*.59,y:H*.57,w:96,h:42},
+      {x:W*.20,y:H*.46,w:60,h:34}
+    ],
+    ready:false,finished:false,notice:'🔑 열쇠를 찾고 스위치를 밟으세요!'
+  };
+  player.x=W*.48;player.y=H*.82;
+}
+function dungeonNear(p,x,y,r){return Math.hypot(p.x-x,p.y-y)<r;}
+function dungeonUpdate(){
+  if(!dungeon||state!=='playing'||gameOver)return;
+  const d=dungeon,p=player;
+  for(const b of d.blocks){
+    const cx=Math.max(b.x,Math.min(p.x,b.x+b.w)),cy=Math.max(b.y,Math.min(p.y,b.y+b.h));
+    const dx=p.x-cx,dy=p.y-cy,dist=Math.hypot(dx,dy);
+    if(dist<p.r+2){
+      if(dist>.01){p.x+=(dx/dist)*(p.r+2-dist);p.y+=(dy/dist)*(p.r+2-dist);}
+      else p.y=b.y-p.r-2;
+    }
+  }
+  if(!d.key.taken&&dungeonNear(p,d.key.x,d.key.y,34)){
+    d.key.taken=true;d.notice='🔑 열쇠 획득! 스위치를 찾아보세요.';
+    floatingTexts.push({x:p.x,y:p.y-30,text:'🔑 열쇠 획득',life:60,color:'#ffdd66'});
+  }
+  if(!d.switch.pressed&&dungeonNear(p,d.switch.x,d.switch.y,36)){
+    d.switch.pressed=true;d.notice='🟦 스위치 작동! 보스를 물리치세요.';
+  }
+  if(!d.chest.opened&&dungeonNear(p,d.chest.x,d.chest.y,37)){
+    d.chest.opened=true;
+    const heal=Math.round(p.maxHp*.35);
+    p.hp=Math.min(p.maxHp,p.hp+heal);
+    score+=100+adventureStage*25;
+    d.notice='🎁 상자 발견! 체력 회복 + 보너스 포인트!';
+    floatingTexts.push({x:p.x,y:p.y-32,text:'🎁 +포인트 / +체력',life:70,color:'#80ffb1'});
+    updateHud();
+  }
+  if(d.ready&&d.key.taken&&d.switch.pressed&&dungeonNear(p,d.gate.x,d.gate.y,47)){
+    d.finished=true;adventureClearStage();
+  }
+}
+function dungeonDraw(){
+  if(!dungeon||!adventureMode||gameMode!=='survival')return;
+  const d=dungeon,W=canvas.width,H=canvas.height;
+  ctx.save();
+  // Snowy stone tiles and icy seams: top-down ice kingdom dungeon aesthetic
+  ctx.fillStyle=world===4?'#291b21':world===2?'#242035':world===1?'#202e38':'#142a45';
+  ctx.fillRect(0,0,W,H);
+  for(let y=0;y<H;y+=55)for(let x=0;x<W;x+=55){
+    ctx.fillStyle=(Math.floor(x/55+y/55)%2===0)?'#ffffff08':'#75dfff08';
+    ctx.fillRect(x+2,y+2,51,51);
+    ctx.strokeStyle='#a6dcff16';ctx.strokeRect(x+1,y+1,53,53);
+  }
+  // icy perimeter and glowing pillars
+  for(let x=0;x<W;x+=70){
+    ctx.fillStyle='#507ca0';ctx.fillRect(x,0,62,16);ctx.fillRect(x,H-16,62,16);
+    ctx.fillStyle='#a3dfff';ctx.fillRect(x+4,1,16,4);
+  }
+  for(let y=0;y<H;y+=70){
+    ctx.fillStyle='#426b89';ctx.fillRect(0,y,16,62);ctx.fillRect(W-16,y,16,62);
+  }
+  for(const b of d.blocks){
+    ctx.fillStyle='#101b2c';ctx.fillRect(b.x+7,b.y+8,b.w,b.h);
+    ctx.fillStyle='#5489b3';ctx.fillRect(b.x,b.y,b.w,b.h);
+    ctx.fillStyle='#b0eaff';ctx.fillRect(b.x,b.y,b.w,7);
+    ctx.strokeStyle='#1a405d';ctx.lineWidth=3;ctx.strokeRect(b.x,b.y,b.w,b.h);
+  }
+  const circle=(x,y,r,color,glow)=>{ctx.shadowColor=glow||color;ctx.shadowBlur=16;ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;};
+  if(!d.key.taken){circle(d.key.x,d.key.y,15,'#f7cf45');ctx.font='24px sans-serif';ctx.textAlign='center';ctx.fillText('🔑',d.key.x,d.key.y+8);}
+  ctx.fillStyle=d.switch.pressed?'#53e4ad':'#5d87cb';ctx.fillRect(d.switch.x-21,d.switch.y-15,42,30);
+  ctx.strokeStyle='#b9e7ff';ctx.lineWidth=3;ctx.strokeRect(d.switch.x-21,d.switch.y-15,42,30);
+  ctx.font='20px sans-serif';ctx.textAlign='center';ctx.fillText(d.switch.pressed?'✓':'⚡',d.switch.x,d.switch.y+7);
+  if(!d.chest.opened){ctx.font='38px sans-serif';ctx.fillText('🎁',d.chest.x,d.chest.y+12);}
+  const unlocked=d.ready&&d.key.taken&&d.switch.pressed;
+  circle(d.gate.x,d.gate.y,d.gate.r,unlocked?'#1a7eff':'#24384f',unlocked?'#42e5ff':'#ffbd55');
+  ctx.strokeStyle=unlocked?'#9beeff':'#dfb35a';ctx.lineWidth=5;ctx.beginPath();ctx.arc(d.gate.x,d.gate.y,d.gate.r-5,0,Math.PI*2);ctx.stroke();
+  ctx.font='25px sans-serif';ctx.fillText(unlocked?'🌀':'🔒',d.gate.x,d.gate.y+9);
+  ctx.restore();
+}
+function dungeonHud(){
+  if(!dungeon||!adventureMode||gameMode!=='survival'||state!=='playing')return;
+  const d=dungeon;
+  ctx.save();ctx.fillStyle='#081728dd';ctx.fillRect(Math.max(0,canvas.width/2-225),8,450,54);
+  ctx.fillStyle='#e7f6ff';ctx.textAlign='center';ctx.font='bold 17px sans-serif';
+  ctx.fillText(world+'-'+adventureStage+'  ❄ 모험 방탈출',canvas.width/2,29);
+  ctx.font='13px sans-serif';
+  ctx.fillText(d.ready?(d.key.taken&&d.switch.pressed?'🌀 출구로 이동하세요!':'🔑 열쇠와 스위치를 찾아 출구를 여세요!'):d.notice,canvas.width/2,49);
+  ctx.restore();
+}
+
 function adventureClearStage(){
   if(gameOver || !adventureMode || gameMode!=='survival')return;
   gameOver=true;
@@ -4722,6 +4838,7 @@ function adventureClearStage(){
   waveActive=false;
   mouse.down=false;
   const n=world,i=adventureStage;
+  dungeon=null;
   lastScore=score;
   bestScore=Math.max(bestScore,score);
   coins+=score;
@@ -4746,6 +4863,7 @@ function showHub() {
   showMenu();                                   // 진행 중인 게임 정리
   inHub = true;
   gameMode = 'survival';
+  dungeon=null;
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('modePick').classList.add('hidden');
   document.getElementById('hubScreen').classList.remove('hidden');
@@ -4760,7 +4878,7 @@ function enterWorld(n, mode) {
   document.getElementById('hubScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.remove('hidden');
   setWorld(n);
-  document.getElementById('worldRow').classList.toggle('hidden', mode === 'survival');   // PvP·파티는 여기서 세계를 고른다
+  document.getElementById('worldRow').classList.add('hidden');   // PvP·파티는 여기서 세계를 고른다
   applyModeLabels();
 }
 

@@ -590,7 +590,7 @@
 @media(max-width:540px){#stageTrail{gap:6px;padding:4px}.stageNode{min-height:75px;font-size:16px;border-radius:10px}.stageNode small{font-size:10px}}
 
 /* Separate adventure renderer: keeps the game visible even if legacy canvas fails. */
-#adventureCanvas{position:fixed;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;display:none}
+#adventureCanvas{position:fixed!important;left:0!important;top:0!important;width:100vw!important;height:100vh!important;z-index:30!important;pointer-events:none!important;display:none}
 #hud,#waveBanner,#bossBar,#controlsPanel{z-index:6}
 #startScreen,#hubScreen,#adventureMap,#adventureWin,#modePick{z-index:40}
 </style>
@@ -1777,6 +1777,14 @@ function refresh(){const show=state==='playing'&&!gameOver;layer.classList.toggl
 initGame();
   dungeonInit();
   state = 'playing';
+  if(adventureMode && gameMode==='survival') {
+    const stageCanvas=document.getElementById('adventureCanvas');
+    stageCanvas.style.display='block';
+    stageCanvas.style.visibility='visible';
+    stageCanvas.style.opacity='1';
+    const worldPicker=document.getElementById('worldRow');
+    worldPicker.classList.add('hidden');worldPicker.style.display='none';
+  }
   try { draw(); } catch(e) { gameErrorDisplay('첫 화면 그리기',e); try { emergencyStageDraw(); } catch(_){} }
   document.getElementById('adventureMap').classList.add('hidden');
   document.getElementById('adventureWin').classList.add('hidden');
@@ -5468,7 +5476,7 @@ const adventureCtx=adventureCanvas.getContext('2d');
 let adventureRenderError='';
 function adventureRenderLoop(){
   requestAnimationFrame(adventureRenderLoop);
-  const visible=adventureMode && gameMode==='survival' && state==='playing' && !gameOver;
+  const visible=adventureMode && gameMode==='survival' && state==='playing';
   adventureCanvas.style.display=visible?'block':'none';
   if(!visible)return;
   try {

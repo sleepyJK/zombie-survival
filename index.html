@@ -566,10 +566,12 @@
   .upDesc { margin-top: 10px; font-size: 13px; color: #b6b6b6; line-height: 1.55; }
   .upMax { color: #ff8a5b; }
   #upHint { font-size: 12px; color: #777; letter-spacing: 1px; }
+
+#touchControls{position:fixed;inset:0;pointer-events:none;z-index:80;display:none;touch-action:none}#touchControls.active{display:block}.touchStick{position:absolute;bottom:24px;width:124px;height:124px;border:2px solid #ffffff77;border-radius:50%;background:#1b30468c;pointer-events:auto;touch-action:none;user-select:none}.touchStick.left{left:22px}.touchStick.right{right:22px;background:#60302e8c}.touchKnob{position:absolute;width:48px;height:48px;left:38px;top:38px;border-radius:50%;background:#a2d9ffb8}.right .touchKnob{background:#ffad8db8}#touchReload{position:absolute;right:44px;bottom:163px;padding:13px 17px;border-radius:15px;background:#283a4de8;color:white;border:1px solid #ffffff88;font-size:16px;pointer-events:auto}@media (pointer:coarse){html,body,#gameCanvas{touch-action:none}}
 </style>
 </head>
 <body>
-<canvas id="gameCanvas"></canvas>
+<canvas id="gameCanvas"></canvas><div id="touchControls"><div class="touchStick left" id="touchMove"><div class="touchKnob"></div></div><div class="touchStick right" id="touchAim"><div class="touchKnob"></div></div><button id="touchReload" type="button">↻ 재장전</button></div>
 <div id="hud" class="hidden">
   <div>❤️ 체력</div>
   <div class="bar-bg"><div id="hpBar" class="bar-fill"></div></div>
@@ -1726,7 +1728,18 @@ function initGame() {
 
 function startGame() {
   if (wifi.role === 'guest') return;      // 참가자는 호스트가 시작해야 한다
-  initGame();
+  
+(function initTouchControls(){
+if(!(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches))return;
+const layer=document.getElementById('touchControls');
+function stick(el,kind){let pid=null;const knob=el.querySelector('.touchKnob');function reset(){pid=null;knob.style.transform='translate(0px,0px)';if(kind==='move'){['w','a','s','d'].forEach(k=>keys[k]=false);}else mouse.down=false;}
+function drag(e){if(e.pointerId!==pid)return;e.preventDefault();const r=el.getBoundingClientRect();let x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2);const d=Math.hypot(x,y);if(d>42){x=x/d*42;y=y/d*42;}knob.style.transform='translate('+x+'px,'+y+'px)';if(kind==='move'){keys.a=x < -12;keys.d=x > 12;keys.w=y < -12;keys.s=y > 12;}else if(Math.hypot(x,y)>8&&player){const a=Math.atan2(y,x);mouse.x=player.x+Math.cos(a)*250;mouse.y=player.y+Math.sin(a)*250;mouse.down=true;}else mouse.down=false;}
+el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();pid=e.pointerId;el.setPointerCapture(pid);drag(e);});el.addEventListener('pointermove',drag);['pointerup','pointercancel','lostpointercapture'].forEach(t=>el.addEventListener(t,reset));}
+stick(document.getElementById('touchMove'),'move');stick(document.getElementById('touchAim'),'aim');document.getElementById('touchReload').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(state==='playing')reload();});
+function refresh(){const show=state==='playing'&&!gameOver;layer.classList.toggle('active',show);if(!show){mouse.down=false;['w','a','s','d'].forEach(k=>keys[k]=false);}requestAnimationFrame(refresh);}refresh();
+})();
+
+initGame();
   state = 'playing';
   mouse.down = false;
   fireLocked = pointerDown;

@@ -4372,8 +4372,14 @@ function draw() {
   ctx.save();
   if (shake > 0) ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
 
+  if(adventureMode && gameMode==='survival' && state==='playing') {
+    if(!dungeon) dungeonInit();
+    dungeonDraw();
+    zombies.forEach(z=>{try{drawZombie(z);}catch(e){ctx.fillStyle=z.color||'#7a9c55';ctx.beginPath();ctx.arc(z.x,z.y,z.r||16,0,Math.PI*2);ctx.fill();}});
+    if(player){drawPlayer();ctx.strokeStyle='#ffffff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(player.x,player.y,Math.max(18,player.r)+5,0,Math.PI*2);ctx.stroke();}
+    dungeonHud();ctx.restore();return;
+  }
   drawGrid();
-  if(adventureMode && gameMode==='survival' && state !== 'menu') { if(!dungeon) dungeonInit(); dungeonDraw(); }
 
   if (state === 'menu') { drawMenuScene(); ctx.restore(); return; }
 
@@ -4774,6 +4780,7 @@ function adventureOpenMap(n) {
     trail.appendChild(btn);
   }
   document.getElementById('adventureMap').classList.remove('hidden');
+  const bossInfo=document.getElementById('adventureBossInfo');if(bossInfo)bossInfo.style.display='none';
 }
 function adventureChooseStage(n,i){
   adventureStage=i;
@@ -4783,6 +4790,12 @@ function adventureChooseStage(n,i){
   document.getElementById('startTitle').textContent=n+'세계 · '+adventureNames[n];
   document.getElementById('startSub').textContent=n+'-'+i+' · 직업 선택 후 모험 시작';
   document.getElementById('startBtn').textContent='▶ '+n+'-'+i+' 시작';
+  const bossList=activeBosses();
+  const boss=bossList[(i-1)%bossList.length];
+  let bossInfo=document.getElementById('adventureBossInfo');
+  if(!bossInfo){bossInfo=document.createElement('div');bossInfo.id='adventureBossInfo';bossInfo.style.cssText='margin:12px auto;padding:14px;border:2px solid #d7a452;border-radius:14px;background:#231b29;color:#fff;max-width:520px;text-align:center;font-size:17px;line-height:1.6';document.getElementById('classPanel').before(bossInfo);}
+  bossInfo.innerHTML='👑 <b>'+n+'-'+i+' 스테이지 보스: '+boss.name+'</b><br>⚔️ '+boss.title+'<br>💥 보스 기술: '+boss.dex+'<br>🔑 보스를 쓰러뜨리고 열쇠·스위치를 찾아 탈출하세요!';
+  bossInfo.style.display='block';
 }
 
 /* Dungeon adventure rooms: keys, switches, chests, obstacles, exit */
@@ -4927,6 +4940,7 @@ function showHub() {
   gameMode = 'survival';
   dungeon=null;
   document.getElementById('startScreen').classList.add('hidden');
+  const bossInfo=document.getElementById('adventureBossInfo');if(bossInfo)bossInfo.style.display='none';
   document.getElementById('modePick').classList.add('hidden');
   document.getElementById('hubScreen').classList.remove('hidden');
   document.getElementById('adventureMap').classList.add('hidden');

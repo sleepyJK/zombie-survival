@@ -593,7 +593,7 @@
 #adventureCanvas{position:fixed!important;left:0!important;top:0!important;width:100vw!important;height:100vh!important;z-index:30!important;pointer-events:none!important;display:none}
 #hud,#waveBanner,#bossBar,#controlsPanel{z-index:6}
 #startScreen,#hubScreen,#adventureMap,#adventureWin,#modePick{z-index:40}
-#startScreen #worldRow{display:none!important} #startScreen #classPanel{display:block!important} #stage3D{position:fixed;inset:0;z-index:32;pointer-events:none;display:none} #stage3D canvas{display:block;width:100%;height:100%} #stageOrb{position:fixed;z-index:35;display:none;width:44px;height:44px;border:3px solid white;border-radius:50%;box-sizing:border-box;pointer-events:none;transform:translate(-50%,-50%);background:radial-gradient(circle at 30% 25%,white,#a3e9ff 40%,#367ac7 100%);box-shadow:0 0 20px #6bdfff} #stageOrb:after{content:'••';position:absolute;top:7px;left:11px;color:#16446a;letter-spacing:3px}</style>
+#startScreen #worldRow{display:none!important} #startScreen #classPanel{display:block!important;visibility:visible!important;opacity:1!important} #startScreen #tierTabs,#startScreen #classRow{display:flex!important;visibility:visible!important} #stage3D{position:fixed;inset:0;z-index:32;pointer-events:none;display:none} #stage3D canvas{display:block;width:100%;height:100%} #stageOrb{position:fixed;z-index:35;display:none;width:44px;height:44px;border:3px solid white;border-radius:50%;box-sizing:border-box;pointer-events:none;transform:translate(-50%,-50%);background:radial-gradient(circle at 30% 25%,white,#a3e9ff 40%,#367ac7 100%);box-shadow:0 0 20px #6bdfff} #stageOrb:after{content:'••';position:absolute;top:7px;left:11px;color:#16446a;letter-spacing:3px}</style>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var t=document.createElement('script');t.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(t)"></script></head>
 <body>
 <canvas id="gameCanvas"></canvas><canvas id="adventureCanvas" aria-hidden="true"></canvas><div id="stageOrb"></div><div id="stage3D" aria-label="3D 모험 게임"></div><div id="touchControls"><div class="touchStick left" id="touchMove"><div class="touchKnob"></div></div><div class="touchStick right" id="touchAim"><div class="touchKnob"></div></div><button id="touchReload" type="button">↻ 재장전</button></div>
@@ -808,6 +808,7 @@ var wifi = { role:null, pc:null, dc:null, open:false, kind:null, playing:false, 
 
 const keys = {};
 const stageMove={x:0,y:0};
+let stageLastMoveAt=0;
 window.addEventListener('keydown', e => {
   const k = (e.key || '').toLowerCase();
   keys[k] = true;
@@ -3023,7 +3024,7 @@ function update() {
   if (keys['s']||keys['arrowdown']) dy += 1;
   if (keys['a']||keys['arrowleft']) dx -= 1;
   if (keys['d']||keys['arrowright']) dx += 1;
-  if(adventureMode && (stageMove.x||stageMove.y)){dx=stageMove.x;dy=stageMove.y;}
+  if(adventureMode && (stageMove.x||stageMove.y)){dx=stageMove.x;dy=stageMove.y;stageLastMoveAt=performance.now();}
   const len = Math.hypot(dx,dy);
   if (len > 0) {
     player.x += dx/len * player.speed;
@@ -4817,9 +4818,15 @@ function adventureChooseStage(n,i){
   document.getElementById('startBtn').textContent='▶ '+n+'-'+i+' 시작';
   document.getElementById('worldRow').style.display='none';
   document.getElementById('classPanel').classList.remove('hidden');
+  document.getElementById('classPanel').style.display='block';
+  document.getElementById('tierTabs').style.display='flex';
+  document.getElementById('classRow').style.display='flex';
   selectedTier=(CLASS_DEFS[playerClass]||CLASS_DEFS.ranged).tier;
   buildClassPanel();
-  if(!document.getElementById('classRow').children.length){selectedTier='common';buildClassPanel();}
+  if(!document.getElementById('classRow').children.length){
+    const available=Object.values(CLASS_DEFS).filter(c=>(c.world||1)===world);
+    if(available.length){selectedTier=available[0].tier;buildClassPanel();}
+  }
   const bossList=activeBosses();
   const boss=bossList[(i-1)%bossList.length];
   let bossInfo=document.getElementById('adventureBossInfo');
@@ -5602,6 +5609,11 @@ function stage3DFrame(){
    }
    for(const obj of a.entities){scene.remove(obj);obj.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose();});}
    a.entities.length=0;
+   if(player && (stageMove.x||stageMove.y) && performance.now()-stageLastMoveAt>90){
+     const d=Math.hypot(stageMove.x,stageMove.y)||1;
+     player.x=Math.max(player.r,Math.min(W-player.r,player.x+stageMove.x/d*(player.speed||3)));
+     player.y=Math.max(player.r,Math.min(H-player.r,player.y+stageMove.y/d*(player.speed||3)));
+   }
    const scale=26,px=player?player.x:W/2,py=player?player.y:H/2;
    const toX=x=>(x-W/2)/scale,toZ=y=>(y-H/2)/scale;
    a.playerMesh.position.set(toX(px),0,toZ(py));

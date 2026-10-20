@@ -1782,6 +1782,7 @@ function initGame() {
 
 function startGame() {
   if (wifi.role === 'guest') return;      // 참가자는 호스트가 시작해야 한다
+  if(window.ensureMobile3D)window.ensureMobile3D();
   
 (function initTouchControls(){
 if(window.__touchSticksReady)return;window.__touchSticksReady=true;
@@ -1822,6 +1823,7 @@ initGame();
 
 function showControlsOverlay() {
   const el = document.getElementById('controlsPanel');
+  if(adventureMode && gameMode==='survival'){el.classList.add('hidden');return;}
   el.classList.remove('hidden');
   el.classList.remove('fadeOut');
   setTimeout(() => { el.classList.add('fadeOut'); }, 6000);
@@ -5627,15 +5629,16 @@ function adventureRenderLoop(){
 requestAnimationFrame(adventureRenderLoop);
 
 
+(function(){const urls=['https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js','https://unpkg.com/three@0.128.0/build/three.min.js','https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'];let i=0,busy=false;function next(){if(window.THREE||busy||i>=urls.length)return;busy=true;const t=document.createElement('script');t.src=urls[i++];t.async=true;t.onload=()=>{busy=false;if(!window.THREE)next()};t.onerror=()=>{busy=false;next()};document.head.appendChild(t)}window.ensureMobile3D=next;next()})();
 /* Lightweight true 3D adventure scene, with existing 2D rendering as fallback. */
 const stage3D=document.getElementById('stage3D');
 let stage3DState=null;
 function stage3DInit(){
- if(!window.THREE||stage3DState)return;
+ if(!window.THREE||stage3DState){if(!window.THREE&&window.ensureMobile3D)window.ensureMobile3D();return;}
  const T=window.THREE;
  const scene=new T.Scene();scene.background=new T.Color(0x182331);
  const camera=new T.PerspectiveCamera(53,window.innerWidth/window.innerHeight,.1,500);
- const renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'low-power'});
+ const renderer=new T.WebGLRenderer({antialias:false,alpha:false,powerPreference:'low-power'});
  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
  renderer.setSize(window.innerWidth,window.innerHeight);
  renderer.shadowMap.enabled=false;
@@ -5658,10 +5661,10 @@ function stage3DInit(){
 function stage3DFrame(){
  requestAnimationFrame(stage3DFrame);
  const visible=adventureMode&&gameMode==='survival'&&state==='playing';
- if(!visible){stage3D.style.display='none';return;}
+ if(!visible){stage3D.style.display='none';adventureCanvas.style.visibility='visible';return;}
  try{
    if(!stage3DState)stage3DInit();
-   if(!stage3DState){stage3D.style.display='none';return;}
+   if(!stage3DState){stage3D.style.display='none';adventureCanvas.style.visibility='visible';return;}
    const a=stage3DState,{T,scene,camera,renderer}=a;
    stage3D.style.display='block';
    document.getElementById('stageOrb').style.display='none';
@@ -5717,8 +5720,9 @@ function stage3DFrame(){
    camera.position.set(toX(px),Math.max(13,H/42),toZ(py)+Math.max(15,H/39));
    camera.lookAt(toX(px),0,toZ(py)-2);
    renderer.render(scene,camera);
+   adventureCanvas.style.visibility='hidden';
  }catch(e){
-   stage3D.style.display='none';
+   stage3D.style.display='none';adventureCanvas.style.visibility='visible';
    if(!stage3DFrame.error){stage3DFrame.error=true;console.error('3D fallback:',e);}
  }
 }

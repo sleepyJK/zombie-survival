@@ -609,7 +609,7 @@
 #startScreen.stageSelection #adventureBossInfo{order:2!important;flex-shrink:0!important;margin:4px auto!important;font-size:13px!important;padding:8px!important}
 #startScreen.stageSelection #startRow{order:3!important;flex-shrink:0!important;position:relative!important;bottom:auto!important;z-index:3!important;background:#0a1425f5!important;border-radius:12px!important;padding:8px!important;width:min(680px,95vw)!important;box-sizing:border-box!important}
 #startScreen.stageSelection #startBtn{padding:12px 17px!important;font-size:16px!important}
-#controlsPanel{display:none!important}</style>
+#controlsPanel{display:none!important}#touchControls .touchStick{border:3px solid #fff9!important;background:#e2f3ff88!important;box-shadow:0 5px 22px #203e5760,inset 0 0 14px #fff8!important}#touchControls .touchKnob{background:linear-gradient(145deg,#fff,#73bdf4)!important;box-shadow:0 3px 12px #235a88a0!important}#touchControls .touchStick.right{background:#ffcfcc99!important}#touchControls .right .touchKnob{background:linear-gradient(145deg,#ffe2b9,#ff8b6b)!important}#touchReload{background:linear-gradient(145deg,#fff3c1,#ffb85e)!important;color:#74421c!important;border:3px solid white!important;font-weight:900!important;box-shadow:0 4px 16px #764a3788!important}#adventureMap{background:radial-gradient(ellipse at top,#9de4f5,#7d8ce1 85%)!important}#adventureMap .stageNode{background:linear-gradient(145deg,#fff5d9,#c4e9ff)!important;color:#344466!important;border:3px solid #fff!important;box-shadow:0 6px 0 #5c8eb2!important}#hud{font-weight:700!important;text-shadow:0 2px 3px #243a5a!important}</style>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var t=document.createElement('script');t.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(t)"></script></head>
 <body>
 <canvas id="gameCanvas"></canvas><canvas id="adventureCanvas" aria-hidden="true"></canvas><div id="stageOrb"></div><div id="stage3D" aria-label="3D 모험 게임"></div><div id="threeStatus" style="position:fixed;top:65px;right:8px;z-index:80;color:white;background:#15243b;padding:7px;display:none"></div><div id="touchControls"><div class="touchStick left" id="touchMove"><div class="touchKnob"></div></div><div class="touchStick right" id="touchAim"><div class="touchKnob"></div></div><button id="touchReload" type="button">↻ 재장전</button></div>
@@ -5636,20 +5636,20 @@ let stage3DState=null;
 function stage3DInit(){
  if(!window.THREE||stage3DState){if(!window.THREE&&window.ensureMobile3D)window.ensureMobile3D();return;}
  const T=window.THREE;
- const scene=new T.Scene();scene.background=new T.Color(0x182331);
+ const scene=new T.Scene();scene.background=new T.Color(0xa9d9f4);
  const camera=new T.PerspectiveCamera(53,window.innerWidth/window.innerHeight,.1,500);
  const renderer=new T.WebGLRenderer({antialias:false,alpha:false,powerPreference:'low-power'});
  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
  renderer.setSize(window.innerWidth,window.innerHeight);
  renderer.shadowMap.enabled=false;
  stage3D.appendChild(renderer.domElement);
- scene.add(new T.HemisphereLight(0xffffff,0x3c4260,2.1));
- const sun=new T.DirectionalLight(0xffffff,1.1);sun.position.set(-12,35,14);scene.add(sun);
- const floor=new T.Mesh(new T.PlaneGeometry(180,180),new T.MeshLambertMaterial({color:0x35444d}));
+ scene.add(new T.HemisphereLight(0xffffff,0x88b7c5,2.6));
+ const sun=new T.DirectionalLight(0xfff4c5,1.5);sun.position.set(-12,35,14);scene.add(sun);
+ const floor=new T.Mesh(new T.PlaneGeometry(180,180),new T.MeshLambertMaterial({color:0x8bd7a7}));
  floor.rotation.x=-Math.PI/2;scene.add(floor);
- const grid=new T.GridHelper(180,90,0x667d8c,0x40525d);grid.position.y=.015;scene.add(grid);
+ const grid=new T.GridHelper(180,90,0xb6efd2,0x72c69c);grid.position.y=.015;scene.add(grid);
  const playerMesh=new T.Group();
- const body=new T.Mesh(new T.SphereGeometry(.75,18,14),new T.MeshPhongMaterial({color:0x7fdcff,shininess:95,specular:0xffffff}));
+ const body=new T.Mesh(new T.SphereGeometry(.75,28,20),new T.MeshPhongMaterial({color:0xffce76,shininess:80,specular:0xffffff}));
  body.position.y=.92;playerMesh.add(body);
  for(const side of [-1,1]){
    const eye=new T.Mesh(new T.SphereGeometry(.09,8,8),new T.MeshBasicMaterial({color:0x102b4d}));
@@ -5676,7 +5676,7 @@ function stage3DFrame(){
    }
    if(a.lastWorld!==world){
      a.lastWorld=world;
-     const colors={1:[0x35444d,0x182331],2:[0x4c315e,0x281a3c],3:[0x7bb4d3,0x183e61],4:[0x704034,0x421e19]};
+     const colors={1:[0x8bd7a7,0xa9d9f4],2:[0xb89cdd,0x795ba4],3:[0xa8e6f7,0x6aa5dd],4:[0xf5b67e,0xc97368]};
      const c=colors[world]||colors[1];a.floor.material.color.setHex(c[0]);scene.background.setHex(c[1]);
    }
    for(const obj of a.entities){scene.remove(obj);obj.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose();});}
@@ -5693,7 +5693,7 @@ function stage3DFrame(){
      const mesh=new T.Mesh(new T.BoxGeometry(Math.max(.3,w/scale),height,Math.max(.3,h/scale)),new T.MeshLambertMaterial({color}));
      mesh.position.set(toX(x+w/2),height/2,toZ(y+h/2));scene.add(mesh);a.entities.push(mesh);
    };
-   const walls={1:0x687984,2:0x74558e,3:0x9cdbf3,4:0xa85d39};
+   const walls={1:0xf5d79e,2:0xcea9e7,3:0xe2f6ff,4:0xf8a65b};
    const wallColor=walls[world]||walls[1];
    box(0,0,W,12,3,wallColor);box(0,H-12,W,12,3,wallColor);
    box(0,0,12,H,3,wallColor);box(W-12,0,12,H,3,wallColor);
@@ -5713,13 +5713,13 @@ function stage3DFrame(){
      if(!Number.isFinite(z.x)||!Number.isFinite(z.y))continue;
      const r=z.isBoss?1.5:.62;
      const mob=new T.Group();
-     const torso=new T.Mesh(new T.BoxGeometry(r*1.15,r*1.5,r*.85),new T.MeshLambertMaterial({color:z.isBoss?0xb44350:0x4d9e64}));
+     const torso=new T.Mesh(new T.BoxGeometry(r*1.15,r*1.5,r*.85),new T.MeshLambertMaterial({color:z.isBoss?0xed6289:0x81c977}));
      torso.position.y=r*1.15;mob.add(torso);
-     const head=new T.Mesh(new T.BoxGeometry(r*.85,r*.85,r*.85),new T.MeshLambertMaterial({color:z.isBoss?0xdf8a75:0x86b88b}));
+     const head=new T.Mesh(new T.BoxGeometry(r*.85,r*.85,r*.85),new T.MeshLambertMaterial({color:z.isBoss?0xffb0b7:0xb2eaa3}));
      head.position.y=r*2.3;mob.add(head);
      mob.position.set(toX(z.x),0,toZ(z.y));scene.add(mob);a.entities.push(mob);
    }
-   camera.position.set(toX(px),Math.max(13,H/42),toZ(py)+Math.max(15,H/39));
+   camera.position.set(toX(px)+9,Math.max(18,H/33),toZ(py)+Math.max(19,H/32));
    camera.lookAt(toX(px),0,toZ(py)-2);
    renderer.render(scene,camera);
    adventureCanvas.style.visibility='hidden';

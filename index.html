@@ -4808,6 +4808,55 @@ function adventureOpenMap(n) {
   document.getElementById('adventureMap').classList.remove('hidden');
   const bossInfo=document.getElementById('adventureBossInfo');if(bossInfo)bossInfo.style.display='none';
 }
+function adventureClassPicker(){
+ const panel=document.getElementById('classPanel');
+ const tabs=document.getElementById('tierTabs');
+ const row=document.getElementById('classRow');
+ if(!panel||!tabs||!row)return;
+ panel.classList.remove('hidden');
+ panel.style.setProperty('display','block','important');
+ panel.querySelector('h2').textContent='⚔️ 직업 선택';
+ const tiers=['common','rare','hero','legend','mythic','god'];
+ const all=Object.values(CLASS_DEFS).filter(c=>(c.world||1)===world);
+ if(!all.length){row.textContent='이 세계에 등록된 직업이 없습니다.';return;}
+ const render=tier=>{
+   selectedTier=tier;
+   tabs.replaceChildren();row.replaceChildren();
+   for(const id of tiers){
+     const t=CLASS_TIERS[id];
+     const btn=document.createElement('button');
+     btn.type='button';btn.className='tierTab'+(tier===id?' active':'');
+     btn.textContent=t.name;btn.style.color=t.color;btn.style.borderColor=t.color;
+     btn.onclick=()=>render(id);tabs.appendChild(btn);
+   }
+   const matches=all.filter(c=>c.tier===tier);
+   if(!matches.length){
+     const hint=document.createElement('div');hint.textContent='이 등급에는 아직 직업이 없습니다.';
+     hint.style.cssText='padding:15px;color:white;text-align:center';row.appendChild(hint);
+   }
+   for(const c of matches){
+     const owned=!!unlockedClasses[c.id];
+     const btn=document.createElement('button');btn.type='button';
+     btn.className='classCard'+(playerClass===c.id?' selected':'')+(owned?'':' locked');
+     btn.style.borderColor=CLASS_TIERS[tier].color;
+     const icon=document.createElement('div');icon.className='clsIcon';icon.textContent=c.icon||'⚔️';
+     const name=document.createElement('div');name.className='clsName';name.textContent=c.name;
+     const desc=document.createElement('div');desc.className='clsDesc';desc.textContent=c.desc||'';
+     btn.append(icon,name,desc);
+     if(!owned){const price=document.createElement('div');price.className='clsPrice';price.textContent='🔒 '+c.price+' 포인트';btn.appendChild(price);}
+     btn.onclick=()=>{
+       if(owned){playerClass=c.id;behav=baseOf(c.id);document.getElementById('fireDesc').textContent=c.fireDesc||'';}
+       else{tryBuyClass(c.id);}
+       render(tier);
+     };
+     row.appendChild(btn);
+   }
+ };
+ const chosen=all.find(c=>c.id===playerClass);
+ render(chosen?chosen.tier:all[0].tier);
+ tabs.style.setProperty('display','flex','important');
+ row.style.setProperty('display','flex','important');
+}
 function adventureChooseStage(n,i){
   adventureStage=i;
   adventureMode=true;
@@ -4823,10 +4872,7 @@ function adventureChooseStage(n,i){
   document.getElementById('classRow').style.display='flex';
   selectedTier=(CLASS_DEFS[playerClass]||CLASS_DEFS.ranged).tier;
   buildClassPanel();
-  if(!document.getElementById('classRow').children.length){
-    const available=Object.values(CLASS_DEFS).filter(c=>(c.world||1)===world);
-    if(available.length){selectedTier=available[0].tier;buildClassPanel();}
-  }
+  adventureClassPicker();
   const bossList=activeBosses();
   const boss=bossList[(i-1)%bossList.length];
   let bossInfo=document.getElementById('adventureBossInfo');

@@ -5730,5 +5730,72 @@ buildBossDex();
 buildClassPanel();
 loop();
 </script>
-</body>
+
+<style>
+#startScreen:not(.hidden) #classPanel{display:block!important;visibility:visible!important;opacity:1!important;min-height:170px!important}
+#startScreen:not(.hidden) #tierTabs{display:flex!important;flex-wrap:wrap!important;gap:6px!important}
+#startScreen:not(.hidden) #classRow{display:flex!important;flex-wrap:wrap!important;gap:8px!important;min-height:85px!important}
+#startScreen:not(.hidden){justify-content:flex-start!important;overflow-y:auto!important;padding-top:22px!important}
+#startScreen:not(.hidden) #startTitle{font-size:clamp(23px,5vw,39px)!important}
+</style>
+<script>
+/* Independent recovery: class picker works even if the original game initialization fails. */
+(function(){
+ const labels=[['common','일반'],['rare','희귀'],['hero','영웅'],['legend','전설'],['mythic','신화'],['god','GOD']];
+ let active='common',lastWorld=0;
+ function available(){
+   try{
+     if(typeof CLASS_DEFS==='undefined')return [{id:'ranged',name:'원거리 사수',icon:'🔫',tier:'common',price:0,desc:'기본 원거리 공격'}];
+     const w=typeof world==='number'?world:1;
+     return Object.values(CLASS_DEFS).filter(c=>(c.world||1)===w);
+   }catch(_){return [];}
+ }
+ function show(){
+   const screen=document.getElementById('startScreen'),tabs=document.getElementById('tierTabs'),row=document.getElementById('classRow');
+   if(!screen||screen.classList.contains('hidden')||!tabs||!row)return;
+   const classes=available();if(!classes.length)return;
+   const w=typeof world==='number'?world:1;
+   if(w!==lastWorld){lastWorld=w;active=classes.find(c=>c.id===(typeof playerClass==='string'?playerClass:''))?.tier||classes[0].tier;}
+   const valid=labels.some(([id])=>id===active);if(!valid)active='common';
+   const own=typeof unlockedClasses==='object'?unlockedClasses:{ranged:true};
+   const render=()=>{
+     tabs.innerHTML='';row.innerHTML='';
+     for(const [id,label] of labels){
+       const b=document.createElement('button');b.type='button';b.className='tierTab'+(id===active?' active':'');
+       b.textContent=label;b.style.cssText='padding:9px 12px;min-width:60px;color:white;background:'+(id===active?'#365c9a':'#242938')+';border:1px solid #8093b5;border-radius:9px';
+       b.addEventListener('click',()=>{active=id;render();});tabs.appendChild(b);
+     }
+     const choices=classes.filter(c=>c.tier===active);
+     if(!choices.length){const t=document.createElement('div');t.textContent='이 등급에는 아직 직업이 없습니다.';t.style.cssText='color:white;padding:15px';row.appendChild(t);}
+     for(const c of choices){
+       const b=document.createElement('button');b.type='button';b.className='classCard'+(typeof playerClass!=='undefined'&&playerClass===c.id?' selected':'');
+       b.style.cssText='min-width:140px;max-width:240px;flex:1 1 140px;padding:12px;color:white;background:#1b2735;border:2px solid #739cd0;border-radius:12px;text-align:center';
+       const name=document.createElement('div');name.textContent=(c.icon||'⚔️')+' '+c.name;name.style.cssText='font-size:17px;font-weight:bold;margin-bottom:6px';
+       const desc=document.createElement('div');desc.textContent=c.desc||'';desc.style.cssText='font-size:12px;line-height:1.5';
+       const status=document.createElement('div');status.textContent=own[c.id]?'✓ 선택 가능':'🔒 '+c.price+' 포인트';status.style.cssText='margin-top:8px;color:#ffdf79';
+       b.append(name,desc,status);
+       b.onclick=()=>{
+         try{
+           if(own[c.id]){playerClass=c.id;behav=baseOf(c.id);document.getElementById('fireDesc').textContent=c.fireDesc||'';}
+           else if(typeof tryBuyClass==='function')tryBuyClass(c.id);
+         }catch(e){console.error('class select',e);}
+         render();
+       };
+       row.appendChild(b);
+     }
+   };
+   render();
+ }
+ function check(){
+   const screen=document.getElementById('startScreen'),tabs=document.getElementById('tierTabs'),row=document.getElementById('classRow');
+   if(screen&&!screen.classList.contains('hidden')&&tabs&&row){
+     const w=typeof world==='number'?world:1;
+     if(!tabs.children.length||!row.children.length||w!==lastWorld)show();
+   }
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',check);else check();
+ setInterval(check,700);
+ window.rebuildStageClasses=show;
+})();
+</script></body>
 </html>

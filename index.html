@@ -774,7 +774,7 @@
   <div id="classPanel">
     <h2>직업 선택</h2>
     <div id="coinInfo">보유 포인트: 0</div>
-    <div id="tierTabs"></div>
+    <div id="safeClasses" style="display:block;padding:8px;color:white"><div id="safeTiers" style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center"><button type="button" data-safe-tier="common" style="padding:10px;border-radius:8px;background:#304b70;color:white;border:1px solid #a3caff">일반</button><button type="button" data-safe-tier="rare" style="padding:10px;border-radius:8px;background:#304b70;color:white;border:1px solid #a3caff">희귀</button><button type="button" data-safe-tier="hero" style="padding:10px;border-radius:8px;background:#304b70;color:white;border:1px solid #a3caff">영웅</button><button type="button" data-safe-tier="legend" style="padding:10px;border-radius:8px;background:#304b70;color:white;border:1px solid #a3caff">전설</button><button type="button" data-safe-tier="mythic" style="padding:10px;border-radius:8px;background:#304b70;color:white;border:1px solid #a3caff">신화</button><button type="button" data-safe-tier="god" style="padding:10px;border-radius:8px;background:#304b70;color:white;border:1px solid #a3caff">GOD</button></div><div id="safeCards" style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;padding:12px"><button type="button" style="padding:12px;color:white;background:#304b70;border:2px solid #ffdf7e;border-radius:10px">🔫 원거리 사수 · 기본 직업</button></div></div><div id="tierTabs"></div>
     <div id="classRow"></div>
     <p id="classMsg" class="hidden"></p>
   </div>
@@ -806,6 +806,28 @@
   <button id="menuBtn" class="secondary">로비</button>
 </div>
 
+<script>
+(function(){
+var current='common',chosen='ranged';
+var defaults=[['ranged','common','🔫','원거리 사수',0],['melee','common','🔪','근접 돌격병',300],['bomber','rare','💣','폭탄병',500],['knight','hero','🛡️','기사',1000],['assassin','legend','🗡️','암살자',2000],['dragonlord','mythic','🐉','드래곤 로드',5000],['emperor','god','👑','황제',10000]];
+function draw(){
+var tabs=document.getElementById('safeTiers'),cards=document.getElementById('safeCards');if(!tabs||!cards)return;
+var buttons=tabs.querySelectorAll('button');for(var i=0;i<buttons.length;i++){(function(b){var tier=b.getAttribute('data-safe-tier');b.style.background=tier===current?'#3673b9':'#304b70';b.onclick=function(){current=tier;draw();};})(buttons[i]);}
+var defs=defaults;
+try{if(typeof CLASS_DEFS!=='undefined'){var w=typeof world==='number'?world:1;var found=Object.values(CLASS_DEFS).filter(function(c){return (c.world||1)===w;});if(found.length)defs=found.map(function(c){return [c.id,c.tier,c.icon,c.name,c.price]});}}catch(e){}
+cards.innerHTML='';var count=0;
+for(var j=0;j<defs.length;j++){(function(c){if(c[1]!==current)return;count++;
+var btn=document.createElement('button');btn.type='button';btn.style.cssText='padding:12px;border:2px solid '+(chosen===c[0]?'#ffdf7e':'#9ac7ff')+';background:#304b70;color:white;border-radius:10px;font-size:15px';
+var owned=c[4]===0;try{if(typeof unlockedClasses!=='undefined')owned=!!unlockedClasses[c[0]];}catch(e){}
+btn.textContent=c[2]+' '+c[3]+(owned?' ✓':' 🔒 '+c[4]+' 포인트');
+btn.onclick=function(){try{if(owned){chosen=c[0];window.safeSelectedClass=chosen;if(typeof playerClass!=='undefined'){playerClass=chosen;behav=baseOf(chosen);}}else if(typeof tryBuyClass==='function')tryBuyClass(c[0]);}catch(e){}draw();};cards.appendChild(btn);
+})(defs[j]);}
+if(!count){var note=document.createElement('span');note.textContent='이 등급의 직업은 아직 없습니다.';cards.appendChild(note);}
+}
+window.safeDrawClasses=draw;
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',draw);else draw();
+})();
+</script>
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');

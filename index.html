@@ -593,7 +593,23 @@
 #adventureCanvas{position:fixed!important;left:0!important;top:0!important;width:100vw!important;height:100vh!important;z-index:30!important;pointer-events:none!important;display:none}
 #hud,#waveBanner,#bossBar,#controlsPanel{z-index:6}
 #startScreen,#hubScreen,#adventureMap,#adventureWin,#modePick{z-index:40}
-#startScreen #worldRow{display:none!important} #startScreen #classPanel{display:block!important;visibility:visible!important;opacity:1!important} #startScreen #tierTabs,#startScreen #classRow{display:flex!important;visibility:visible!important} #stage3D{position:fixed;inset:0;z-index:32;pointer-events:none;display:none} #stage3D canvas{display:block;width:100%;height:100%} #stageOrb{position:fixed;z-index:35;display:none;width:44px;height:44px;border:3px solid white;border-radius:50%;box-sizing:border-box;pointer-events:none;transform:translate(-50%,-50%);background:radial-gradient(circle at 30% 25%,white,#a3e9ff 40%,#367ac7 100%);box-shadow:0 0 20px #6bdfff} #stageOrb:after{content:'••';position:absolute;top:7px;left:11px;color:#16446a;letter-spacing:3px}</style>
+#startScreen #worldRow{display:none!important} #startScreen #classPanel{display:block!important;visibility:visible!important;opacity:1!important} #startScreen #tierTabs,#startScreen #classRow{display:flex!important;visibility:visible!important} #stage3D{position:fixed;inset:0;z-index:32;pointer-events:none;display:none} #stage3D canvas{display:block;width:100%;height:100%} #stageOrb{position:fixed;z-index:35;display:none;width:44px;height:44px;border:3px solid white;border-radius:50%;box-sizing:border-box;pointer-events:none;transform:translate(-50%,-50%);background:radial-gradient(circle at 30% 25%,white,#a3e9ff 40%,#367ac7 100%);box-shadow:0 0 20px #6bdfff} #stageOrb:after{content:'••';position:absolute;top:7px;left:11px;color:#16446a;letter-spacing:3px}
+/* Stage selection: keep classes in first viewport on mobile Safari. */
+#startScreen.stageSelection{justify-content:flex-start!important;gap:8px!important;padding:12px 10px 105px!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;}
+#startScreen.stageSelection .titleWrap{order:0!important;flex-shrink:0}
+#startScreen.stageSelection #startTitle{font-size:clamp(22px,4vw,34px)!important;letter-spacing:1px!important}
+#startScreen.stageSelection #startSub{font-size:13px!important;margin:3px 0!important;letter-spacing:0!important}
+#startScreen.stageSelection #startTagline,#startScreen.stageSelection #bossDex,#startScreen.stageSelection #startScoreInfo,#startScreen.stageSelection #startHint,#startScreen.stageSelection #animalPanel{display:none!important}
+#startScreen.stageSelection #classPanel{order:1!important;width:min(680px,96vw)!important;max-width:96vw!important;display:block!important;flex-shrink:0!important;border:2px solid #91baff!important;border-radius:14px!important;background:#0a1824f5!important;padding:12px!important;box-sizing:border-box!important;}
+#startScreen.stageSelection #classPanel h2{font-size:19px!important;letter-spacing:1px!important;color:#fff!important;margin-bottom:8px!important}
+#startScreen.stageSelection #tierTabs{display:flex!important;flex-wrap:wrap!important;gap:6px!important;justify-content:center!important}
+#startScreen.stageSelection #tierTabs button{padding:10px!important;min-width:62px!important;font-size:14px!important}
+#startScreen.stageSelection #classRow{display:flex!important;min-height:90px!important;flex-wrap:wrap!important;gap:8px!important}
+#startScreen.stageSelection #classRow .classCard{min-width:125px!important;flex:1 1 130px!important;padding:9px!important}
+#startScreen.stageSelection #adventureBossInfo{order:2!important;flex-shrink:0!important;margin:4px auto!important;font-size:13px!important;padding:8px!important}
+#startScreen.stageSelection #startRow{order:3!important;flex-shrink:0!important;position:sticky!important;bottom:0!important;z-index:3!important;background:#0a1425f5!important;border-radius:12px!important;padding:8px!important;width:min(680px,95vw)!important;box-sizing:border-box!important}
+#startScreen.stageSelection #startBtn{padding:12px 17px!important;font-size:16px!important}
+</style>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var t=document.createElement('script');t.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(t)"></script></head>
 <body>
 <canvas id="gameCanvas"></canvas><canvas id="adventureCanvas" aria-hidden="true"></canvas><div id="stageOrb"></div><div id="stage3D" aria-label="3D 모험 게임"></div><div id="touchControls"><div class="touchStick left" id="touchMove"><div class="touchKnob"></div></div><div class="touchStick right" id="touchAim"><div class="touchKnob"></div></div><button id="touchReload" type="button">↻ 재장전</button></div>
@@ -1812,6 +1828,7 @@ function showControlsOverlay() {
 }
 
 function showMenu() {
+  document.getElementById('startScreen').classList.remove('stageSelection');
   state = 'menu';
   gameOver = true;          // 진행 중이던 웨이브 타이머 무력화
   initGame();
@@ -4859,6 +4876,7 @@ function adventureClassPicker(){
 }
 function adventureChooseStage(n,i){
   adventureStage=i;
+  document.getElementById('startScreen').classList.add('stageSelection');
   adventureMode=true;
   document.getElementById('adventureMap').classList.add('hidden');
   enterWorld(n,'survival');
@@ -4873,6 +4891,7 @@ function adventureChooseStage(n,i){
   selectedTier=(CLASS_DEFS[playerClass]||CLASS_DEFS.ranged).tier;
   buildClassPanel();
   adventureClassPicker();
+  document.getElementById('startScreen').scrollTop=0;
   const bossList=activeBosses();
   const boss=bossList[(i-1)%bossList.length];
   let bossInfo=document.getElementById('adventureBossInfo');
@@ -5032,6 +5051,7 @@ function showHub() {
 }
 
 function enterWorld(n, mode) {
+  if(!adventureMode)document.getElementById('startScreen').classList.remove('stageSelection');
   gameMode = mode;
   inHub = false;
   document.getElementById('hubScreen').classList.add('hidden');

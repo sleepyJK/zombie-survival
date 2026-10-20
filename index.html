@@ -609,10 +609,10 @@
 #startScreen.stageSelection #adventureBossInfo{order:2!important;flex-shrink:0!important;margin:4px auto!important;font-size:13px!important;padding:8px!important}
 #startScreen.stageSelection #startRow{order:3!important;flex-shrink:0!important;position:relative!important;bottom:auto!important;z-index:3!important;background:#0a1425f5!important;border-radius:12px!important;padding:8px!important;width:min(680px,95vw)!important;box-sizing:border-box!important}
 #startScreen.stageSelection #startBtn{padding:12px 17px!important;font-size:16px!important}
-</style>
+#controlsPanel{display:none!important}</style>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="var t=document.createElement('script');t.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(t)"></script></head>
 <body>
-<canvas id="gameCanvas"></canvas><canvas id="adventureCanvas" aria-hidden="true"></canvas><div id="stageOrb"></div><div id="stage3D" aria-label="3D 모험 게임"></div><div id="touchControls"><div class="touchStick left" id="touchMove"><div class="touchKnob"></div></div><div class="touchStick right" id="touchAim"><div class="touchKnob"></div></div><button id="touchReload" type="button">↻ 재장전</button></div>
+<canvas id="gameCanvas"></canvas><canvas id="adventureCanvas" aria-hidden="true"></canvas><div id="stageOrb"></div><div id="stage3D" aria-label="3D 모험 게임"></div><div id="threeStatus" style="position:fixed;top:65px;right:8px;z-index:80;color:white;background:#15243b;padding:7px;display:none"></div><div id="touchControls"><div class="touchStick left" id="touchMove"><div class="touchKnob"></div></div><div class="touchStick right" id="touchAim"><div class="touchKnob"></div></div><button id="touchReload" type="button">↻ 재장전</button></div>
 <div id="hud" class="hidden">
   <div>❤️ 체력</div>
   <div class="bar-bg"><div id="hpBar" class="bar-fill"></div></div>
@@ -5660,8 +5660,10 @@ function stage3DInit(){
 }
 function stage3DFrame(){
  requestAnimationFrame(stage3DFrame);
+ const st=document.getElementById('threeStatus');
  const visible=adventureMode&&gameMode==='survival'&&state==='playing';
- if(!visible){stage3D.style.display='none';adventureCanvas.style.visibility='visible';return;}
+ if(!visible){stage3D.style.display='none';adventureCanvas.style.visibility='visible';if(st)st.style.display='none';return;}
+ if(st){st.style.display='block';st.textContent=window.THREE?'3D 준비 중':'3D 라이브러리 로딩 실패';}
  try{
    if(!stage3DState)stage3DInit();
    if(!stage3DState){stage3D.style.display='none';adventureCanvas.style.visibility='visible';return;}
@@ -5721,7 +5723,9 @@ function stage3DFrame(){
    camera.lookAt(toX(px),0,toZ(py)-2);
    renderer.render(scene,camera);
    adventureCanvas.style.visibility='hidden';
+   if(st)st.style.display='none';
  }catch(e){
+   if(st){st.style.display='block';st.textContent='3D 오류: '+String(e.message||e).slice(0,90);}
    stage3D.style.display='none';adventureCanvas.style.visibility='visible';
    if(!stage3DFrame.error){stage3DFrame.error=true;console.error('3D fallback:',e);}
  }
